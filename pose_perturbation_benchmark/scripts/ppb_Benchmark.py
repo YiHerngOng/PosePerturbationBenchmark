@@ -6,7 +6,7 @@ Purpose: Introduce new pose perturbation benchmark pipeline
 
 '''
 import rospy
-from kinova_path_planning import *
+# from kinova_path_planning import *
 import sys, os
 import numpy as np
 import pdb
@@ -108,13 +108,13 @@ class ppBenchmark():
 
 	def sampling_all_Poses(self):
 		self.all_Poses = []
-		# self.all_Poses = self.samplingPoses((self._pExtremes[0], self._pExtremes[1]), self._pIncrement[0], 0, self.all_Poses)
+		self.all_Poses = self.samplingPoses((self._pExtremes[0], self._pExtremes[1]), self._pIncrement[0], 0, self.all_Poses)
 
 		# self.all_Poses = self.samplingPoses((self._pExtremes[2],self._pExtremes[3]) , self._pIncrement[1], 1, self.all_Poses)
 
-		self.all_Poses = self.samplingPoses((self._pExtremes[4], self._pExtremes[5]),self._pIncrement[2], 2, self.all_Poses)
+		# self.all_Poses = self.samplingPoses((self._pExtremes[4], self._pExtremes[5]),self._pIncrement[2], 2, self.all_Poses)
 
-		self.all_Poses = self.samplingPoses((self._oExtremes[0],self._oExtremes[1]), self._oIncrement[0], 3, self.all_Poses)
+		# self.all_Poses = self.samplingPoses((self._oExtremes[0],self._oExtremes[1]), self._oIncrement[0], 3, self.all_Poses)
 
 		# self.all_Poses = self.samplingPoses((self._oExtremes[2],self._oExtremes[3]), self._oIncrement[1], 4, self.all_Poses)
 
@@ -234,8 +234,6 @@ class ppBenchmark():
 		while not rospy.is_shutdown():
 			self.markers_pub.publish(arrow)
 
-
-	
 if __name__ == '__main__':
 	pExt = [0.6, 0.6, 0.0, 0.4, 0.0, 0.6]
 	oExt = [45, 45, 45, 45, 30, 30]
@@ -249,29 +247,23 @@ if __name__ == '__main__':
 	angles = transformations.euler_from_quaternion([qx, qy, qz, qw])
 	home_joints = [4.709939211146766, 2.8400415518300606, -2.3948526894673706e-05, 0.7500912370325066, -1.6632760154433166, 4.480076660920214, 17.446434920234484]
 	# base_pose = [0.0047,-0.5159,0.072648,0.73280044528,0.0286624951588,-0.0161398685441,0.679648051136]
-	base_pose = [0,-0.54,0.06,0,-0,0]
+	initial_pose = [0.0, -0.44, 0.01, 90, 0, 0]
+	base_pose = [0.0,(-0.44-0.0144),0.01,90,0,0]
 
 	lift_pose = [0.04250594322, -0.575295301029, 0.332918595279, 0.558853317466, 0.459234398492, 0.396013037662, 0.565650431628]
 	shake_pose1 = [0.0424577485112, -0.575276284964, 0.332864738195, 0.682842077878, 0.238865152403, 0.566419484376, 0.394764617672]
 	shake_pose2 = [0.0424396061673, -0.575292909309, 0.332909875925, 0.29602066861, 0.660033261061, 0.102708646288, 0.682772870014]
-	ppB = ppBenchmark(base_pose, pExt, oExt, pInc, oInc)
+	ppB = ppBenchmark(initial_pose, pExt, oExt, pInc, oInc)
 	ppB.sampling_all_Poses()
 	# for i in ppB.all_Poses:
 	# 	print i
 	# print ppB.z
 
 	Robot = robot("kinova")
-	# Robot.plannr_type("RRT")
-	# Robot.move_to_Goal(base_pose)
-	box_pose = PoseStamped()
-	box_pose.header.frame_id = "kinova_move_group"
-	box_pose.pose.position.x = 0.0
-	box_pose.pose.position.y = -0.54
-	box_pose.pose.position.z = 0.005625
-	box_pose.pose.orientation.w = 1.0
-	box_name = "cube"
-	Robot.scene.add_box(box_name, box_pose, size=(0.13125, 0.13125, 0.13125))
-	# rospy.sleep(2)
-	while not rospy.is_shutdown():
-		attached_objects = Robot.scene.get_attached_objects([box_name])
+	Robot.plannar_type("RRT*")
+	Robot.scene.remove_world_object()
+	Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.54, (-0.05 + 0.165625 + 0.01), 1,0], "cube")
+	rospy.sleep(3)
+	Robot.move_to_Goal(ppB.all_Poses[0])
 
+	# rospy.sleep(2)

@@ -18,7 +18,7 @@ import numpy as np
 from geometry_msgs.msg import PoseStamped
 from moveit_msgs.msg import PlanningScene, PlanningSceneComponents, AllowedCollisionEntry, AllowedCollisionMatrix
 from moveit_msgs.srv import GetPlanningScene, ApplyPlanningScene
-
+from ppb_Benchmark import *
 # base pose : position [0.6972, 0, 0.8] orientation [0, 90, 0]
 # vary poses based on the base pose. 
 
@@ -228,13 +228,26 @@ class robot(object):
 	def get_Robot_EErpy(self):
 		return self.group.get_current_rpy()
 
-bp1 = [0.0, -0.44, -0.0, 90, 0, 0]
-base_pose = [0.0, -0.50, 0.0, 90, 0, 0]
+
+initial_pose = [0.0, -0.44, 0.01, 90, 0, 0]
+base_pose = [0.0, (-0.44-0.0144), 0.01, 90, 0, 0] # make it closer to object
+
+pExt = [0.6, 0.6, 0.0, 0.4, 0.0, 0.6]
+oExt = [45, 45, 45, 45, 30, 30]
+pInc = [0.2,0.2,0.2]
+oInc = [15,15,15]
+
+ppB = ppBenchmark(initial_pose, pExt, oExt, pInc, oInc)
+ppB.sampling_all_Poses()
 Robot = robot("kinova")
 Robot.planner_type("RRT")
 # Robot.allow_collision()
+# print Robot.get_Robot_EEpose()
+# get cube 
+Robot.scene.remove_world_object()
 
-Robot.get_Object([0.065625, 0.065625, 0.065625], [0.0, -0.54, 0.0, 1,0], "cube")
+Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.54, (-0.05 + 0.165625 + 0.01), 1,0], "cube")
+
 
 # Robot.allow_collision()
 
@@ -242,11 +255,14 @@ Robot.get_Object([0.065625, 0.065625, 0.065625], [0.0, -0.54, 0.0, 1,0], "cube")
 # while not rospy.is_shutdown():
 # 	attached_objects = Robot.scene.get_attached_objects([box_name])
 rospy.sleep(5)
+for i in range(len(ppB.all_Poses)):
+	Robot.move_to_Goal(ppB.all_Poses[i])
+# rospy.sleep(3)
+# Robot.scene.remove_world_object()
+# rospy.sleep(2)
+# Robot.planner_type("RRT*")
+# rospy.sleep(2)
+# Robot.move_to_Goal(base_pose)
 
-Robot.move_to_Goal(bp1)
-rospy.sleep(3)
-Robot.scene.remove_world_object()
-rospy.sleep(2)
-Robot.planner_type("RRT*")
-rospy.sleep(2)
-Robot.move_to_Goal(base_pose)
+
+
