@@ -41,7 +41,7 @@ class ppBenchmark():
 		self._pIncrement = pIncrement # [xinc, yinc, zinc]
 		self._oIncrement = oIncrement # [rinc, pinc, winc]
 		self._basePose = base_pose # [x, y, z, r, p, w]
-		self.z = [0.06]
+		self.z = [base_pose[2]]
 
 		# rospy.init_node("expo_demo", anonymous=True)
 		# self.rate = rospy.Rate(10)
@@ -58,7 +58,10 @@ class ppBenchmark():
 
 
 		for pose in min_poses:
-			if (axis == 3 or axis == 4) and pose[2] == self.z[0]:
+			if axis == 3 and pose[2] == self.z[0]:
+				continue # pitch cannot have hand facing up
+
+			if axis == 4 and pose[2] == self.z[0]:
 				min_numPose = 1
 				print ext[0]
 
@@ -92,29 +95,31 @@ class ppBenchmark():
 				temp = pose[:]		
 				poses.append(temp)
 
-		# get z list up-down
-		if axis == 2:
-			minbase_z = deepcopy(self._basePose[2])
-			for mdz in range(int(min_numPose)):
-				minbase_z -= inc
-				self.z.append(minbase_z)
-
-			maxbase_z = deepcopy(self._basePose[2])
-			for xdz in range(int(max_numPose)):
-				maxbase_z += inc
-				self.z.append(maxbase_z)
-
 		return poses
+
+	def get_z(self):
+		min_zPose = math.ceil(self._pExtremes[4] / self._pIncrement[2])
+		max_zPose = math.ceil(self._pExtremes[5] / self._pIncrement[2])
+		minbase_z = deepcopy(self._basePose[2])
+		for mdz in range(int(min_zPose)):
+			minbase_z -= self._pIncrement[2]
+			self.z.append(minbase_z)
+
+		maxbase_z = deepcopy(self._basePose[2])
+		for xdz in range(int(max_zPose)):
+			maxbase_z += self._pIncrement[2]
+			self.z.append(maxbase_z)		
+
 
 	def sampling_all_Poses(self):
 		self.all_Poses = []
-		self.all_Poses = self.samplingPoses((self._pExtremes[0], self._pExtremes[1]), self._pIncrement[0], 0, self.all_Poses)
+		# self.all_Poses = self.samplingPoses((self._pExtremes[0], self._pExtremes[1]), self._pIncrement[0], 0, self.all_Poses)
 
 		# self.all_Poses = self.samplingPoses((self._pExtremes[2],self._pExtremes[3]) , self._pIncrement[1], 1, self.all_Poses)
 
 		# self.all_Poses = self.samplingPoses((self._pExtremes[4], self._pExtremes[5]),self._pIncrement[2], 2, self.all_Poses)
 
-		# self.all_Poses = self.samplingPoses((self._oExtremes[0],self._oExtremes[1]), self._oIncrement[0], 3, self.all_Poses)
+		self.all_Poses = self.samplingPoses((self._oExtremes[0],self._oExtremes[1]), self._oIncrement[0], 3, self.all_Poses)
 
 		# self.all_Poses = self.samplingPoses((self._oExtremes[2],self._oExtremes[3]), self._oIncrement[1], 4, self.all_Poses)
 
@@ -235,9 +240,9 @@ class ppBenchmark():
 			self.markers_pub.publish(arrow)
 
 if __name__ == '__main__':
-	pExt = [0.6, 0.6, 0.0, 0.4, 0.0, 0.6]
+	pExt = [0.06, 0.06, 0.0, 0.04, 0.0, 0.06]
 	oExt = [45, 45, 45, 45, 30, 30]
-	pInc = [0.2,0.2,0.2]
+	pInc = [0.02,0.02,0.02]
 	oInc = [15,15,15]
 
 	qx = 0.73280044528
@@ -255,15 +260,3 @@ if __name__ == '__main__':
 	shake_pose2 = [0.0424396061673, -0.575292909309, 0.332909875925, 0.29602066861, 0.660033261061, 0.102708646288, 0.682772870014]
 	ppB = ppBenchmark(initial_pose, pExt, oExt, pInc, oInc)
 	ppB.sampling_all_Poses()
-	# for i in ppB.all_Poses:
-	# 	print i
-	# print ppB.z
-
-	Robot = robot("kinova")
-	Robot.plannar_type("RRT*")
-	Robot.scene.remove_world_object()
-	Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.54, (-0.05 + 0.165625 + 0.01), 1,0], "cube")
-	rospy.sleep(3)
-	Robot.move_to_Goal(ppB.all_Poses[0])
-
-	# rospy.sleep(2)

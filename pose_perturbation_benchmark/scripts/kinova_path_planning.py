@@ -106,7 +106,6 @@ class robot(object):
 		pose_goal.position.y = ee_pose[1]
 		pose_goal.position.z = ee_pose[2]
 		if len(ee_pose) == 6:
-			# ee_pose = [ee_pose_xy[0], ee_pose_xy[1], 0.0868505172955, 0.990955685914, -0.130970521675, 0.00218639608306, 0.0291336691572]
 			quat = tf.transformations.quaternion_from_euler(math.radians(ee_pose[3]), math.radians(ee_pose[4]), math.radians(ee_pose[5]))
 			pose_goal.orientation.x = quat[0]
 			pose_goal.orientation.y = quat[1]
@@ -182,21 +181,6 @@ class robot(object):
 				self.traj_time.append(time_step)
 			# return traj1
 
-	def add_obj(self):
-		obj_pose = geometry_msgs.msg.PoseStamped()
-		obj_pose.header.frame_id = "box"
-		quat_obj = tf.transformations.quaternion_from_euler(math.radians(0), math.radians(0), math.radians(0))
-		obj_pose.pose.position.x = 0.5
-		obj_pose.pose.position.y = 0.5
-		obj_pose.pose.position.z = 0.5
-		obj_pose.pose.orientation.x = quat_obj[0]
-		obj_pose.pose.orientation.y = quat_obj[1]
-		obj_pose.pose.orientation.z = quat_obj[2]
-		obj_pose.pose.orientation.w = quat_obj[3]
-		# print "obj_pose", obj_pose
-		self.scene.add_box("box", obj_pose, size=(0.1,0.1,0.1))		
-
-
 	def output_trajfile(self,traj, filename):
 		csvfile = filename + ".csv"
 		file = open(csvfile,"wb")
@@ -222,47 +206,64 @@ class robot(object):
 		box_name = shape
 		self.scene.add_box(box_name, box_pose, size=(sizes[0], sizes[1], sizes[2]))
 
-	def get_Robot_EEpose(self):
+	def get_Robot_EEposemsg(self):
 		return self.group.get_current_pose()
 
 	def get_Robot_EErpy(self):
 		return self.group.get_current_rpy()
 
+	def get_Robot_EE6Dpose(self):
+		xyz = [self.get_Robot_EEposemsg().pose.position.x, self.get_Robot_EEposemsg().pose.position.y, self.get_Robot_EEposemsg().pose.position.z]
+		rpy = self.get_Robot_EErpy()
+
+		return xyz + rpy 
+
+	def save_poses_into_csv(self, ppB):
+		for i in range(len(ppB.all_Poses)):
+			
 
 initial_pose = [0.0, -0.44, 0.01, 90, 0, 0]
 base_pose = [0.0, (-0.44-0.0144), 0.01, 90, 0, 0] # make it closer to object
 
-pExt = [0.6, 0.6, 0.0, 0.4, 0.0, 0.6]
+pExt = [0.06, 0.06, 0.0, 0.04, 0.0, 0.06]
 oExt = [45, 45, 45, 45, 30, 30]
-pInc = [0.2,0.2,0.2]
+pInc = [0.02,0.02,0.02]
 oInc = [15,15,15]
 
 ppB = ppBenchmark(initial_pose, pExt, oExt, pInc, oInc)
+ppB.get_z()
 ppB.sampling_all_Poses()
 Robot = robot("kinova")
 Robot.planner_type("RRT")
 # Robot.allow_collision()
-# print Robot.get_Robot_EEpose()
-# get cube 
 Robot.scene.remove_world_object()
 
-Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.54, (-0.05 + 0.165625 + 0.01), 1,0], "cube")
+
+# Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.54, (-0.05 + 0.165625 + 0.01), 1.0], "cube") # get cube
+# rospy.sleep(2)
+# Robot.move_to_Goal(initial_pose)
+# Robot.scene.remove_world_object()
+# rospy.sleep(5)
+# Robot.move_to_Goal([0.0, -0.45, 0.01, 90, 0, 0])
+
+
+for i in range(len(ppB.all_Poses)):
+	Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.54, (-0.05 + 0.165625 + 0.01), 1.0], "cube") # get cube
+	rospy.sleep(2)
+	print "Approaching pose ", i
+	Robot.move_to_Goal(ppB.all_Poses[i])
+	rospy.sleep(2)
+	Robot.scene.remove_world_object()
+	rospy.sleep(5)
+	current_pose = ppB.all_Poses[i][:]
+	base_pose = current_pose[:]
+	base_pose[1] -= 0.014 
+	print "base_pose", base_pose
+	Robot.planner_type("RRT*")
+	Robot.move_to_Goal(base_pose)
+	rospy.sleep(2)
 
 
 # Robot.allow_collision()
-
-# rospy.sleep(2)
-# while not rospy.is_shutdown():
-# 	attached_objects = Robot.scene.get_attached_objects([box_name])
-rospy.sleep(5)
-for i in range(len(ppB.all_Poses)):
-	Robot.move_to_Goal(ppB.all_Poses[i])
-# rospy.sleep(3)
-# Robot.scene.remove_world_object()
-# rospy.sleep(2)
-# Robot.planner_type("RRT*")
-# rospy.sleep(2)
-# Robot.move_to_Goal(base_pose)
-
 
 
