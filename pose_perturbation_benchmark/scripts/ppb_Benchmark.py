@@ -18,6 +18,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 from tf import transformations
 import serial
 from object_size import *
+from geometry_msgs.msg import PoseStamped
 
 '''
 Pose perturbation benchmark:
@@ -42,10 +43,10 @@ class ppBenchmark():
 		self._basePose = base_pose # [x, y, z, r, p, w]
 		self.z = [0.06]
 
-		rospy.init_node("expo_demo", anonymous=True)
-		self.rate = rospy.Rate(10)
-		self.marker_pub = rospy.Publisher("/visualization_marker", Marker, queue_size=100)
-		self.markers_pub = rospy.Publisher("/visualization_marker_array", MarkerArray, queue_size=20)
+		# rospy.init_node("expo_demo", anonymous=True)
+		# self.rate = rospy.Rate(10)
+		# self.marker_pub = rospy.Publisher("/visualization_marker", Marker, queue_size=100)
+		# self.markers_pub = rospy.Publisher("/visualization_marker_array", MarkerArray, queue_size=20)
 
 
 	def samplingPoses(self, ext, inc, axis, poses):
@@ -113,9 +114,9 @@ class ppBenchmark():
 
 		self.all_Poses = self.samplingPoses((self._pExtremes[4], self._pExtremes[5]),self._pIncrement[2], 2, self.all_Poses)
 
-		# self.all_Poses = self.samplingPoses((self._oExtremes[0],self._oExtremes[1]), self._oIncrement[0], 3, self.all_Poses)
+		self.all_Poses = self.samplingPoses((self._oExtremes[0],self._oExtremes[1]), self._oIncrement[0], 3, self.all_Poses)
 
-		self.all_Poses = self.samplingPoses((self._oExtremes[2],self._oExtremes[3]), self._oIncrement[1], 4, self.all_Poses)
+		# self.all_Poses = self.samplingPoses((self._oExtremes[2],self._oExtremes[3]), self._oIncrement[1], 4, self.all_Poses)
 
 		# self.all_Poses = self.samplingPoses((self._oExtremes[4], self._oExtremes[5]),self._pIncrement[2], 5, self.all_Poses)
 		# for i in self.all_Poses:
@@ -204,20 +205,26 @@ class ppBenchmark():
 		poses = self.all_Poses[:]
 		count = 0
 		for i in range(len(poses)):
+			# print len(poses)
 			# rot_mat = self.rotation_matrix(poses[i][3],poses[i][4],poses[i][5])
 			for j in range(3):
+				# represent orientation about y
+				# pointing left
 				if j == 0:
-					r = 90 + poses[i][4]
-					p = 0 + poses[i][3]
-					w = 0 + poses[i][5]
-				elif j == 1:
-					r = 0 + poses[i][4]
-					p = -90 + poses[i][3]
-					w = 0 + poses[i][5]
-				elif j == 2:
-					r = 0 + poses[i][4]
-					p = 0 + poses[i][3]
+					r = 0 + poses[i][3]
+					p = 0 + poses[i][4]
 					w = -90 + poses[i][5]
+				# represent orientation about
+				# pointing up 
+				# elif j == 1:
+				# 	r = 0 + poses[i][3]
+				# 	p = -90 + poses[i][4]
+				# 	w = 0 + poses[i][5]
+				# # # pointing front
+				# elif j == 2:
+				# 	r = 0 + poses[i][3]
+				# 	p = 0 + poses[i][4]
+				# 	w = -90 + poses[i][5]
 				# print count
 				arrow.markers.append(self.add_marker(poses[i][0],poses[i][1],poses[i][2],r,p,w,count))
 				count += 1
@@ -242,123 +249,29 @@ if __name__ == '__main__':
 	angles = transformations.euler_from_quaternion([qx, qy, qz, qw])
 	home_joints = [4.709939211146766, 2.8400415518300606, -2.3948526894673706e-05, 0.7500912370325066, -1.6632760154433166, 4.480076660920214, 17.446434920234484]
 	# base_pose = [0.0047,-0.5159,0.072648,0.73280044528,0.0286624951588,-0.0161398685441,0.679648051136]
-	base_pose = [0,-0.54,0.06,0,0,0]
+	base_pose = [0,-0.54,0.06,0,-0,0]
 
 	lift_pose = [0.04250594322, -0.575295301029, 0.332918595279, 0.558853317466, 0.459234398492, 0.396013037662, 0.565650431628]
 	shake_pose1 = [0.0424577485112, -0.575276284964, 0.332864738195, 0.682842077878, 0.238865152403, 0.566419484376, 0.394764617672]
 	shake_pose2 = [0.0424396061673, -0.575292909309, 0.332909875925, 0.29602066861, 0.660033261061, 0.102708646288, 0.682772870014]
 	ppB = ppBenchmark(base_pose, pExt, oExt, pInc, oInc)
 	ppB.sampling_all_Poses()
-	for i in ppB.all_Poses:
-		print i
-	print ppB.z
+	# for i in ppB.all_Poses:
+	# 	print i
+	# print ppB.z
 
-	ppB.add_marker_poses()
-	# define robot and move to base pose
-
-	# print Robot.group.get_current_joint_values()
-	# roll is changing y 0 15 30 45, -15, -30, -45
-	# pitch - x -90, -45, -60, -120, -135
-	# yaw - z 180, 165, 150, 195 210
-	# base_pose = [0.0,-0.55,0.07, -90, 0, 180]
-	# next_pose = [0.0,-0.59,0.07, -90, 0, 180]
-	# lift_pose = [0.0,-0.59,0.2, -90, 0, 180]
-
-	# jpose = [0.9738466077,1.5756331639,-2.3710322135,1.0999663433,-0.4126239352,1.5473627854,-0.8734530441]
-	# vertical_pose = [3.1414, 3.14, 3.1414, 3.141410729179159, 3.14, 3.141534807922412, 3.14]
-
-	# Robot = robot("kinova")
-	# Robot.planner_type("RRT*")
-	# Robot.move_to_Joint(base_pose)
-	# Robot.move_to_waypoint(lift_pose, "goal")
-	# Robot.display_Trajectory()
-	# Robot.move_to_waypoint(jpose, "pose")
-
-	# Robot.output_trajfile(Robot.traj_pos, "trajpos5")
-	# Robot.output_trajfile(Robot.traj_vel, "trajvel5")
-	# Robot.output_trajfile(Robot.traj_time, "trajtime4")
-	# print Robot.group.get_current_joint_values()
-	# # print traj
-# [-3.1417300001534465, 3.1414323853274806, 3.141459220125756, 3.1415535663807304, -3.1416293967318047, 3.141460237427801, -3.1416816724018126, 0.0, 0.0, 0.0]
- 
-	# filename = "waypoint.csv"
-	# file = open(filename,"wb")
-	# for j in traj:
-	# 	joint_state = j[:]
-	# 	for k in joint_state:
-	# 		file.write(str(k))
-	# 		file.write(',')
-	# 	# file.write(str(path_count))
-	# 	file.write('\n')
-	# Robot.move_to_Joint([-0.5708907315,5.2319247483,2.0035223591,5.3835160097,0.6565821367,4.4928974685,-1.5458457691])
-	# Robot.move_to_Joint([-1.5731004548310388, 2.8399635722906793, -3.528502071276302e-06, 0.7500470318119973, 4.619968819952383, 4.480029520452209, -1.4031059367326641])
-	
-	# print Robot.group.get_current_joint_values()
-
-	####### Demo and Reset #######
-	# print "Hello ! Welcome to use our automated grasp testing infrastructure."
-	# ser = serial.Serial("/dev/ttyACM0")
-	# reset_user = raw_input("Choose an object orientation (0 - 90)")
-	# if reset_user == "0":
-	# 	ser.write("d")
-	# else:
-	# 	ser.write(reset_user)
-
-	# while True:
-	# 	if ser.readline() == "f\n": 
-	# 		break
-
-	# user = raw_input("Choose one of the action: (L) Lift and shake (P) Pick and place (D) Drop!!!")
-
-	# Robot = robot("kinova")
-	# Robot.planner_type("RRT")
+	Robot = robot("kinova")
+	# Robot.plannr_type("RRT")
 	# Robot.move_to_Goal(base_pose)
-	# Robot.move_finger("Close")
+	box_pose = PoseStamped()
+	box_pose.header.frame_id = "kinova_move_group"
+	box_pose.pose.position.x = 0.0
+	box_pose.pose.position.y = -0.54
+	box_pose.pose.position.z = 0.005625
+	box_pose.pose.orientation.w = 1.0
+	box_name = "cube"
+	Robot.scene.add_box(box_name, box_pose, size=(0.13125, 0.13125, 0.13125))
+	# rospy.sleep(2)
+	while not rospy.is_shutdown():
+		attached_objects = Robot.scene.get_attached_objects([box_name])
 
-	# if user == "L":
-	# 	####### lift and shake #############
-	# 	Robot.move_to_Goal(lift_pose)
-	# 	# rospy.sleep(2)
-	# 	Robot.move_to_Goal(shake_pose1)
-	# 	# rospy.sleep(2)
-	# 	Robot.move_to_Goal(shake_pose2)
-	# 	# rospy.sleep(2)
-
-	# 	Robot.move_to_Goal(base_pose)
-	# 	# rospy.sleep(2)
-	# 	Robot.move_finger("Open")
-
-	# 	# rospy.sleep(3)
-	# 	Robot.planner_type("RRT*")
-	# 	Robot.move_to_Joint(home_joints)
-	# 	###################################
-
-	# if user == "P":
-	# 	########### pick and place ##############
-	# 	place_pose = deepcopy(base_pose)
-	# 	# rospy.sleep(1)
-	# 	place_pose[0] += 0.2
-	# 	place_pose[1] += -0.2
-	# 	Robot.move_to_Goal(lift_pose)
-	# 	# rospy.sleep(1)
-	# 	Robot.move_to_Goal(place_pose)
-	# 	# rospy.sleep(1)
-	# 	Robot.move_finger("Open")
-	# 	# rospy.sleep(1)
-	# 	Robot.planner_type("RRT*")
-	# 	Robot.move_to_Joint(home_joints)
-	# 	########################################
-
-	# if user == "D":
-	# 	########## Drop ###############
-	# 	Robot.move_to_Goal(lift_pose)
-	# 	Robot.move_finger("Open")
-	# 	Robot.planner_type("RRT*")
-	# 	Robot.move_to_Joint(home_joints)
-	# 	###############################
-	# rospy.sleep(3)
-	# print "Sending signal to reset system ....."
-	# ser.write("d")	
-	# while True:
-	# 	if ser.readline() == "f\n":
-	# 		break

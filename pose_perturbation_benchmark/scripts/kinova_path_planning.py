@@ -3,6 +3,7 @@ import rospy
 import moveit_commander
 import sys, os
 import moveit_msgs.msg
+# from moveit_msgs.msg import PickupAction, PickupGoal, PlaceAction, PlaceGoal
 import tf.transformations
 # import std_msgs.msg
 import geometry_msgs.msg
@@ -11,8 +12,13 @@ import tf, math
 from sensor_msgs.msg import JointState
 import time
 from std_msgs.msg import String
+from std_msgs.msg import Bool
 import random
 import numpy as np
+from geometry_msgs.msg import PoseStamped
+from moveit_msgs.msg import PlanningScene, PlanningSceneComponents, AllowedCollisionEntry, AllowedCollisionMatrix
+from moveit_msgs.srv import GetPlanningScene, ApplyPlanningScene
+
 # base pose : position [0.6972, 0, 0.8] orientation [0, 90, 0]
 # vary poses based on the base pose. 
 
@@ -30,6 +36,10 @@ class robot(object):
 			self.group.set_planning_time(5)
 			self.gripper = moveit_commander.MoveGroupCommander("gripper")
 			rospy.set_param('/move_group/trajectory_execution/allowed_start_tolerance', 0.0)
+			rospy.wait_for_service("/apply_planning_scene", 10.0)
+			rospy.wait_for_service("/get_planning_scene", 10.0)
+			self.aps = rospy.ServiceProxy('/apply_planning_scene', ApplyPlanningScene)
+			self.gps = rospy.ServiceProxy('/get_planning_scene', GetPlanningScene)
 			rospy.sleep(2)
 			self.disp_traj = moveit_msgs.msg.DisplayTrajectory()
 			self.disp_traj.trajectory_start = self.robot.get_current_state()
@@ -42,7 +52,39 @@ class robot(object):
 			self.traj_pos = []
 			self.traj_vel = []
 			self.traj_time = []
-	
+			# self.pubPlanningScene = rospy.Publisher("planning_scene" PlanningScene)
+			# rospy.wait_for_service("/get_planning_scene", 10.0)
+			# get_planning_scene = rospy.ServiceProxy('/get_planning_scene', GetPlanningScene)
+			# request = PlanningSceneComponents(components=PlanningSceneComponents.ALLOWED_COLLISION_MATRIX)
+			# response = get_planning_scene(request)
+
+
+	def allow_collision(self):
+		# self.pubPlanningScene = rospy.Publisher("planning_scene", PlanningScene)
+		ps = PlanningScene()
+		psc = PlanningSceneComponents()
+		acm = AllowedCollisionMatrix()
+		ace = AllowedCollisionEntry()
+		is_allow = Bool()
+		is_allow.data = False
+		ace.enabled = [False]
+		# get scene components 
+		# psc.ALLOWED_COLLISION_MATRIX
+		getScene = self.gps(psc) # make it empty for now
+		# ps = getScene
+		ps.allowed_collision_matrix.entry_names = ["cube"]
+		ps.allowed_collision_matrix.entry_values = [ace]
+		ps.allowed_collision_matrix.default_entry_names = ["cube"]
+		ps.allowed_collision_matrix.default_entry_values = [1]
+		ps.is_diff = 1
+		# print "gripper name", self.gripper
+		applyScene = self.aps(ps)
+		print ps
+		# ps.robot_state =  getScene.robot_state
+		# ps.fixed_frame_transforms = getScene.fixed_frame_transforms
+		# ps.allowed_collision_matrix = getScene.allowed_collision_matrix
+		# ps.link			
+
 	def get_arm_joints(self, msg):
 		self.arm_joint_states = msg.position
 		if len(self.prev_arm_js) > 0 and max(np.absolute(np.array(self.arm_joint_states) - np.array(self.prev_arm_js))) > 0.01:
@@ -79,12 +121,12 @@ class robot(object):
 
 		self.group.set_pose_target(pose_goal)
 		self.plan = self.group.plan()
-		# self.group.set_planning_time(10)
+		self.group.set_planning_time(10)
 		self.group.go(wait=True)
 		self.group.execute(self.plan, wait=True)
 		self.group.stop()
 		self.group.clear_pose_targets()
-		rospy.sleep(5)
+		rospy.sleep(2)
 
 	def move_finger(self, cmd):
 		if cmd == "Close":
@@ -172,97 +214,32 @@ class robot(object):
 
 
 
-	# def pick_and_place(self):
+bp1 = [0.0, -0.44, -0.0, 90, 0, 0]
+base_pose = [0.0, -0.50, 0.0, 90, 0, 0]
+Robot = robot("kinova")
+Robot.planner_type("RRT")
+# Robot.allow_collision()
 
-# if __name__ == '__main__':
-	# MPNet pipeline
-	# 
-	# file = open("waypoints.csv", "rb")
-	# lines = file.readlines()
-	# waypoints = []
-	# trajs_to_waypoints = []
-	# Robot = robot("kinova")
-	# Robot.planner_type("RRT*")
-	# print Robot.group.get_current_pose()
-	# sample_size = 10000
-	# base_xyz = Robot.group.get_current_pose()
-	# print base_xyz
-	# base_rpy = Robot.group.get_current_rpy()
-	# print base_rpy
-	# base_pose = [base_xyz.pose.position.x, base_xyz.pose.position.y, base_xyz.pose.position.z, math.radians(0), math.radians(0), math.radians(0)]
-	# Robot.move_to_Goal(base_pose)
-	# path_count = 0
-	# name file
-	# wp_fn = str(Robot.filename) + '.csv'
-	# file = open(wp_fn,"wb")
-	# for i in range(sample_size):
-	# 	x = random.uniform(-0.2, 0.2)
-	# 	y = random.uniform(-0.3, -0.6)
-	# 	z = random.uniform(0.05, 0.30)
-	# 	r = random.uniform(-360, 360)
-	# 	p = random.uniform(-360, 360)
-	# 	w = random.uniform(-360,360)
-	# 	new_pose = [x,y,z,r,p,w]
-	# 	# CHECK if path feasible
-	# 	traj = Robot.move_to_waypoint(new_pose)
-	# 	if traj == None:
-	# 		pass
-	# 	else:
-	# 		# write into csv
-	# 		path_count += 1
-	# 		for j in traj:
-	# 			joint_state = j[:]
-	# 			for k in joint_state:
-	# 				file.write(str(k))
-	# 				file.write(',')
-	# 			file.write(str(path_count))
-	# 			file.write('\n')
+# print "current pose:", Robot.group.get_current_pose()
+# print "current rpy:", Robot.group.get_current_rpy()
+box_pose = PoseStamped()
+box_pose.header.frame_id = Robot.robot.get_planning_frame()
+box_pose.pose.position.x = 0.0
+box_pose.pose.position.y = -0.54
+box_pose.pose.position.z = 0.005625
+box_pose.pose.orientation.w = 1.0
+box_name = "cube"
+Robot.scene.add_box(box_name, box_pose, size=(0.065625, 0.065625, 0.065625))
 
+# Robot.allow_collision()
 
-	# ee_pose = [0.0766141796649, -0.586149657477, 0.0568505172955, 0.990955685914, -0.130970521675, 0.00218639608306, 0.0291336691572]
-	# ee_pose = [-(-14.2395)*0.01, -(-17.2235+60)*0.01]
-	# Robot.move_to_waypoint(ee_pose)
-	# ee_pose = [-(-10.2325)*0.01, -(-1.6681+60)*0.01]
-	# Robot.move_to_waypoint(ee_pose)
-	# ee_pose = [(-16.3469)*0.01, -(3.6912+60)*0.01]
-	# ee_pose = [(0)*0.01, -(0+60)*0.01]
-	
-	# Robot.move_to_waypoint(ee_pose)
-	# ee_pose = [(-20)*0.01, -(20+60)*0.01]
-	# Robot.move_to_waypoint(ee_pose)
+# rospy.sleep(2)
+# while not rospy.is_shutdown():
+# 	attached_objects = Robot.scene.get_attached_objects([box_name])
 
-	# ee_pose2 = [-0.131098628652, -0.384403743486, 0.0568505172955,0.990955685914, -0.130970521675, 0.00218639608306, 0.0291336691572]
-	# Robot.move_to_waypoint(ee_pose2)
-	# # 
-	# for i in lines:
-	# 	waypoint = i.strip("\n").split(",") # formulate it such that it has xyz rpw.
-	# 	traj_to_waypoint = Robot.move_to_waypoint(waypoint)
-	# 	waypoints.append(waypoint)
-	# 	trajs_to_waypoints.append(traj_to_waypoint)
-
-	# if path planning done, publish a topic to if_node_finish
-	# while not rospy.is_shutdown():
-	# 	indicator = "NODE FINISHED"
-	# 	# rospy.loginfo(indicator)
-	# 	Robot.pub.publish(indicator)
-	# 	Robot.rate.sleep()
-
-
-
-
-
-
-
-	# # RRT star pipeline
-	# file1 = open("start_and_goal.csv", "rb")
-	# lines = file1.readlines()
-	# start = lines[0].strip("\n").split(",") 
-	# end = lines[-1].strip("\n").split(",")
-	# Robot.planner_type("RRT*")
-	# traj_to_start = Robot.move_to_waypoint(start)
-	# traj_to_end = Robot.move_to_waypoint(end)
-
-	# # RRT pipeline
-	# Robot.planner_type("RRT")
-	# traj_to_start = Robot.move_to_waypoint(start)
-	# traj_to_end = Robot.move_to_waypoint(end)
+Robot.move_to_Goal(bp1)
+rospy.sleep(3)
+Robot.scene.remove_world_object()
+rospy.sleep(2)
+Robot.planner_type("RRT*")
+Robot.move_to_Goal(base_pose)
