@@ -212,7 +212,21 @@ class robot(object):
 				file.write(str(j))
 				file.write('\n')
 
+	def get_Object(self, sizes, poses, shape):
+		box_pose = PoseStamped()
+		box_pose.header.frame_id = Robot.robot.get_planning_frame()
+		box_pose.pose.position.x = poses[0]
+		box_pose.pose.position.y = poses[1]
+		box_pose.pose.position.z = poses[2]
+		box_pose.pose.orientation.w = poses[3]
+		box_name = shape
+		self.scene.add_box(box_name, box_pose, size=(sizes[0], sizes[1], sizes[2]))
 
+	def get_Robot_EEpose(self):
+		return self.group.get_current_pose()
+
+	def get_Robot_EErpy(self):
+		return self.group.get_current_rpy()
 
 bp1 = [0.0, -0.44, -0.0, 90, 0, 0]
 base_pose = [0.0, -0.50, 0.0, 90, 0, 0]
@@ -220,26 +234,19 @@ Robot = robot("kinova")
 Robot.planner_type("RRT")
 # Robot.allow_collision()
 
-# print "current pose:", Robot.group.get_current_pose()
-# print "current rpy:", Robot.group.get_current_rpy()
-box_pose = PoseStamped()
-box_pose.header.frame_id = Robot.robot.get_planning_frame()
-box_pose.pose.position.x = 0.0
-box_pose.pose.position.y = -0.54
-box_pose.pose.position.z = 0.005625
-box_pose.pose.orientation.w = 1.0
-box_name = "cube"
-Robot.scene.add_box(box_name, box_pose, size=(0.065625, 0.065625, 0.065625))
+Robot.get_Object([0.065625, 0.065625, 0.065625], [0.0, -0.54, 0.0, 1,0], "cube")
 
 # Robot.allow_collision()
 
 # rospy.sleep(2)
 # while not rospy.is_shutdown():
 # 	attached_objects = Robot.scene.get_attached_objects([box_name])
+rospy.sleep(5)
 
 Robot.move_to_Goal(bp1)
 rospy.sleep(3)
 Robot.scene.remove_world_object()
 rospy.sleep(2)
 Robot.planner_type("RRT*")
+rospy.sleep(2)
 Robot.move_to_Goal(base_pose)
