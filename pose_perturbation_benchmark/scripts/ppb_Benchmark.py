@@ -43,12 +43,6 @@ class ppBenchmark():
 		self._basePose = base_pose # [x, y, z, r, p, w]
 		self.z = [base_pose[2]]
 
-		# rospy.init_node("expo_demo", anonymous=True)
-		# self.rate = rospy.Rate(10)
-		# self.marker_pub = rospy.Publisher("/visualization_marker", Marker, queue_size=100)
-		# self.markers_pub = rospy.Publisher("/visualization_marker_array", MarkerArray, queue_size=20)
-
-
 	def samplingPoses(self, ext, inc, axis, poses):
 		# min_numPose = ext[0] / inc
 		if len(poses) == 0:
@@ -113,13 +107,13 @@ class ppBenchmark():
 
 	def sampling_all_Poses(self):
 		self.all_Poses = []
-		# self.all_Poses = self.samplingPoses((self._pExtremes[0], self._pExtremes[1]), self._pIncrement[0], 0, self.all_Poses)
+		self.all_Poses = self.samplingPoses((self._pExtremes[0], self._pExtremes[1]), self._pIncrement[0], 0, self.all_Poses)
 
-		# self.all_Poses = self.samplingPoses((self._pExtremes[2],self._pExtremes[3]) , self._pIncrement[1], 1, self.all_Poses)
+		self.all_Poses = self.samplingPoses((self._pExtremes[2],self._pExtremes[3]) , self._pIncrement[1], 1, self.all_Poses)
 
-		# self.all_Poses = self.samplingPoses((self._pExtremes[4], self._pExtremes[5]),self._pIncrement[2], 2, self.all_Poses)
+		self.all_Poses = self.samplingPoses((self._pExtremes[4], self._pExtremes[5]),self._pIncrement[2], 2, self.all_Poses)
 
-		self.all_Poses = self.samplingPoses((self._oExtremes[0],self._oExtremes[1]), self._oIncrement[0], 3, self.all_Poses)
+		# self.all_Poses = self.samplingPoses((self._oExtremes[0],self._oExtremes[1]), self._oIncrement[0], 3, self.all_Poses)
 
 		# self.all_Poses = self.samplingPoses((self._oExtremes[2],self._oExtremes[3]), self._oIncrement[1], 4, self.all_Poses)
 
@@ -238,6 +232,17 @@ class ppBenchmark():
 		# print arrow.markers[0]
 		while not rospy.is_shutdown():
 			self.markers_pub.publish(arrow)
+
+	def save_poses_into_csv(self, filename):
+		f =  filename + ".csv"
+		csv = open(f, "wb")
+		for i in range(len(self.all_Poses)):
+			temp = self..all_Poses[i]
+			for j in range(len(temp)):
+				csv.write(str(temp[j]))
+				csv.write(",")
+			csv.write("\n")
+		csv.close()	
 
 if __name__ == '__main__':
 	pExt = [0.06, 0.06, 0.0, 0.04, 0.0, 0.06]

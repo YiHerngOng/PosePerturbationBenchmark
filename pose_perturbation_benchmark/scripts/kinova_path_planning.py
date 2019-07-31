@@ -218,52 +218,66 @@ class robot(object):
 
 		return xyz + rpy 
 
-	def save_poses_into_csv(self, ppB):
-		for i in range(len(ppB.all_Poses)):
-			
 
-initial_pose = [0.0, -0.44, 0.01, 90, 0, 0]
-base_pose = [0.0, (-0.44-0.0144), 0.01, 90, 0, 0] # make it closer to object
+def get_random_translation():
+	translation = ['x', 'y', 'z']
+	import random
 
-pExt = [0.06, 0.06, 0.0, 0.04, 0.0, 0.06]
-oExt = [45, 45, 45, 45, 30, 30]
-pInc = [0.02,0.02,0.02]
-oInc = [15,15,15]
+	return random.choice(translation)
 
-ppB = ppBenchmark(initial_pose, pExt, oExt, pInc, oInc)
-ppB.get_z()
-ppB.sampling_all_Poses()
-Robot = robot("kinova")
-Robot.planner_type("RRT")
-# Robot.allow_collision()
-Robot.scene.remove_world_object()
+def main():
+	# set initial pose and base pose
+	initial_pose = [0.0, -0.44, 0.01, 90, 0, 0]
+	base_pose = [0.0, (-0.44-0.0144), 0.01, 90, 0, 0] # make it closer to object
 
+	# set pose extremes and increments
+	pExt = [0.06, 0.06, 0.0, 0.04, 0.0, 0.06]
+	oExt = [45, 45, 45, 45, 30, 30]
+	pInc = [0.02,0.02,0.02]
+	oInc = [15,15,15]
 
-# Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.54, (-0.05 + 0.165625 + 0.01), 1.0], "cube") # get cube
-# rospy.sleep(2)
-# Robot.move_to_Goal(initial_pose)
-# Robot.scene.remove_world_object()
-# rospy.sleep(5)
-# Robot.move_to_Goal([0.0, -0.45, 0.01, 90, 0, 0])
+	# compute pose extremes for robot hand
+	ppB = ppBenchmark(initial_pose, pExt, oExt, pInc, oInc)
+	ppB.get_z()
+	ppB.sampling_all_Poses()
+	ppB.save_poses_into_csv("test_posefile")
 
+	# read file 
 
-for i in range(len(ppB.all_Poses)):
-	Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.54, (-0.05 + 0.165625 + 0.01), 1.0], "cube") # get cube
-	rospy.sleep(2)
-	print "Approaching pose ", i
-	Robot.move_to_Goal(ppB.all_Poses[i])
-	rospy.sleep(2)
+	# initialize robot
+	Robot = robot("kinova")
+	# Robot.allow_collision()
 	Robot.scene.remove_world_object()
-	rospy.sleep(5)
-	current_pose = ppB.all_Poses[i][:]
-	base_pose = current_pose[:]
-	base_pose[1] -= 0.014 
-	print "base_pose", base_pose
-	Robot.planner_type("RRT*")
-	Robot.move_to_Goal(base_pose)
-	rospy.sleep(2)
+
+	for i in range(len(ppB.all_Poses)):
+		Robot.planner_type("RRT")
+		Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.54, (-0.05 + 0.165625 + 0.01), 1.0], "cube") # get cube
+		rospy.sleep(2)
+		print "Approaching pose ", i
+		Robot.move_to_Goal(ppB.all_Poses[i])
+		rospy.sleep(2)
+		Robot.scene.remove_world_object()
+		rospy.sleep(5)
+		current_pose = ppB.all_Poses[i][:]
+		base_pose = current_pose[:]
+		base_pose[1] -= 0.014 
+		print "base_pose", base_pose
+		Robot.planner_type("RRT*")
+		Robot.move_to_Goal(base_pose)
+		rospy.sleep(2)	
+
+if __name__ == '__main__':
+	main()
 
 
-# Robot.allow_collision()
+# pick a pose from benchmark
+#
+# 1. Choose a translational axis (x, y, z)
+# 2. Proceed to one extreme and get result 
+# 3. Determine range with binary search
+# 4. Choose 
+#
+
+
 
 
