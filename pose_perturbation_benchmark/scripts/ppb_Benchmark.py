@@ -163,7 +163,7 @@ class ppBenchmark():
 		plt.show()
 
 
-
+	# Note : markers still have problems ...
 	def add_marker(self, x, y, z, r, p, w, i):
 		marker = Marker()
 		marker.header.frame_id = "root"

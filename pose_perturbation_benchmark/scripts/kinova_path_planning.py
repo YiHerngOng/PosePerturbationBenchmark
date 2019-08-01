@@ -222,9 +222,12 @@ class robot(object):
 def get_random_translation():
 	translation = ['x', 'y', 'z']
 	import random
-
 	return random.choice(translation)
 
+
+def readfile(filename):
+	csv
+	return all_Poses
 def main():
 	# set initial pose and base pose
 	initial_pose = [0.0, -0.44, 0.01, 90, 0, 0]
@@ -243,6 +246,11 @@ def main():
 	ppB.save_poses_into_csv("test_posefile")
 
 	# read file 
+	all_Poses = readfile()
+	# pick an axis from xyz 
+	rand_translation = get_random_translation()
+	if rand_translation == 'x':
+
 
 	# initialize robot
 	Robot = robot("kinova")
