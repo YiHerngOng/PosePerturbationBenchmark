@@ -237,7 +237,7 @@ class ppBenchmark():
 		f =  filename + ".csv"
 		csv = open(f, "wb")
 		for i in range(len(self.all_Poses)):
-			temp = self..all_Poses[i]
+			temp = self.all_Poses[i]
 			for j in range(len(temp)):
 				csv.write(str(temp[j]))
 				csv.write(",")
