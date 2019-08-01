@@ -226,8 +226,23 @@ def get_random_translation():
 
 
 def readfile(filename):
-	csv
-	return all_Poses
+	import csv
+	pose = []
+	all_Poses = []
+	with open(filename) as csvfile:
+		csv_reader = csv.reader(csvfile, delimiter=',')
+		for row in csv_reader:
+			temp = row
+			for each in temp:
+				try:
+					pose.append(float(each))
+				except:
+					raise ValueError
+					pass
+			all_Poses.append(pose)	
+
+	return all_Poses # make sure all poses are float 
+
 def main():
 	# set initial pose and base pose
 	initial_pose = [0.0, -0.44, 0.01, 90, 0, 0]
@@ -250,6 +265,8 @@ def main():
 	# pick an axis from xyz 
 	rand_translation = get_random_translation()
 	if rand_translation == 'x':
+		# NOTE !!! we need to know where and how to locate only x translations
+		
 
 
 	# initialize robot
