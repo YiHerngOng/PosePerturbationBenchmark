@@ -2,7 +2,7 @@
 
 '''
 Author: Yi Herng Ong
-Purpose: Introduce new pose perturbation benchmark pipeline
+Purpose: Generate poses (precomputed limits & variations) for pose hallucination benchmark
 
 '''
 import rospy
@@ -105,19 +105,39 @@ class ppBenchmark():
 			self.z.append(maxbase_z)		
 
 
+	def sampling_limits(self):
+		self.x_only = []
+		self.y_only = []
+		self.z_only = []
+		self.r_only = []
+		self.p_only = []
+		self.w_only = []
+
+		self.x_only = self.samplingPoses((self._pExtremes[0], self._pExtremes[1]), self._pIncrement[0], 0, self.x_only) # left-right
+		self.y_only = self.samplingPoses((self._pExtremes[2], self._pExtremes[3]), self._pIncrement[1], 1, self.y_only) # close-far
+		self.z_only = self.samplingPoses((self._pExtremes[4], self._pExtremes[5]), self._pIncrement[2], 2, self.z_only) # up-down
+		self.r_only = self.samplingPoses((self._oExtremes[0], self._oExtremes[1]), self._oIncrement[0], 3, self.r_only) # rotate about y
+		self.p_only = self.samplingPoses((self._oExtremes[2], self._oExtremes[3]), self._oIncrement[1], 4, self.p_only) # rotate about x
+		self.w_only = self.samplingPoses((self._oExtremes[4], self._oExtremes[5]), self._oIncrement[2], 5, self.w_only) # rotate about z
+
+
+		self.all_limits = [self.x_only, self.y_only, self.z_only, self.r_only, self.p_only, self.w_only]
+		
 	def sampling_all_Poses(self):
 		self.all_Poses = []
+
 		self.all_Poses = self.samplingPoses((self._pExtremes[0], self._pExtremes[1]), self._pIncrement[0], 0, self.all_Poses)
 
 		self.all_Poses = self.samplingPoses((self._pExtremes[2],self._pExtremes[3]) , self._pIncrement[1], 1, self.all_Poses)
 
 		self.all_Poses = self.samplingPoses((self._pExtremes[4], self._pExtremes[5]),self._pIncrement[2], 2, self.all_Poses)
 
-		# self.all_Poses = self.samplingPoses((self._oExtremes[0],self._oExtremes[1]), self._oIncrement[0], 3, self.all_Poses)
+		self.all_Poses = self.samplingPoses((self._oExtremes[0],self._oExtremes[1]), self._oIncrement[0], 3, self.all_Poses)
 
-		# self.all_Poses = self.samplingPoses((self._oExtremes[2],self._oExtremes[3]), self._oIncrement[1], 4, self.all_Poses)
+		self.all_Poses = self.samplingPoses((self._oExtremes[2],self._oExtremes[3]), self._oIncrement[1], 4, self.all_Poses)
 
-		# self.all_Poses = self.samplingPoses((self._oExtremes[4], self._oExtremes[5]),self._pIncrement[2], 5, self.all_Poses)
+		self.all_Poses = self.samplingPoses((self._oExtremes[4], self._oExtremes[5]),self._pIncrement[2], 5, self.all_Poses)
+
 		# for i in self.all_Poses:
 		# 	print i
 	def rotation_matrix(self, r, p, w):

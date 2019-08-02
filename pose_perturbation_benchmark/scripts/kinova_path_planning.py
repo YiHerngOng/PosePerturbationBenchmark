@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+
+'''
+Author(s): Yi Herng Ong
+Purpose: Use MoveIt interface to plan paths for Kinova Jaco arm for executing new pose hallucination benchmark 
+Date: June 2019
+'''
+
 import rospy
 import moveit_commander
 import sys, os
@@ -261,7 +268,18 @@ def main():
 	# compute pose extremes for robot hand
 	ppB = ppBenchmark(initial_pose, pExt, oExt, pInc, oInc)
 	ppB.get_z()
+
+	# compute limits
+	ppB.sampling_limits()
+	# test limits and conduct binary search
+	for each_axis_limits in ppB.all_limits:
+		temp = each_axis_limits[:]
+		for limit in range(len(temp)):
+			# move to one extreme
+			Robot.move_to_Goal(limit)
+			ser = serial.Serial()
 	ppB.sampling_all_Poses()
+
 	# ppB.save_poses_into_csv("test_posefile")
 
 	# read file 
