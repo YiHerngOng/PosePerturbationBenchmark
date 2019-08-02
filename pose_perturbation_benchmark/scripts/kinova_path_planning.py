@@ -249,8 +249,8 @@ def main():
 	# set initial pose and base pose
 	initial_pose = [0.03, -0.54, 0.05, 90, 180, 0] # about 10 cm away from object
 	# base_pose = [0.01, (-0.44-0.0114), 0.01, 90, 0, 0] # make it closer to object
-	lift_pose = [0.03, (-0.54-0.134), 0.2, 90, 180, 0] # about 10 cm away from object
-	base_pose = [0.03, (-0.54-0.134), 0.01, 90, 180, 0] # make it closer to object
+	lift_pose = [-0.07, (-0.54-0.124), 0.2, 90, 180, 0] # about 10 cm away from object
+	base_pose = [0.03, (-0.54-0.124), 0.01, 90, 180, 0] # make it closer to object
 
 	# set pose extremes and increments
 	pExt = [0.06, 0.06, 0.0, 0.04, 0.0, 0.06]
@@ -285,24 +285,23 @@ def main():
 	# Robot.move_to_Goal(initial_pose)
 	Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.66, (-0.05 + 0.165625 + 0.01), 1.0], "cube") # get cube
 	rospy.sleep(2)
-	Robot.move_to_Goal(initial_pose)
+	Robot.move_to_Goal(initial_pose) 
 	Robot.scene.remove_world_object()
-	rospy.sleep(2)
+	rospy.sleep(2) # this 2 seconds is important for rrt* to work
 
 	Robot.planner_type("RRT*")
-	Robot.move_to_Goal(base_pose)
+	Robot.move_to_Goal(base_pose) # move close the object
 
-	Robot.move_finger("Close")
+	Robot.move_finger("Close") # close grip
 
-	# print Robot.group.get_current_pose()
-	# rospy.sleep(2)
 	Robot.move_to_Goal(lift_pose)
-	Robot.move_finger("Open")
+	Robot.move_finger("Open") # open grip, object will drop
 	
 	time.sleep(3)
 
-	ser.write('r')
+	ser.write('r') # reset starts
 
+	# loop until reset is done
 	while 1:
 		tdata = ser.read()           # Wait forever for anything
 		print tdata 
