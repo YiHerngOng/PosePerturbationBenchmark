@@ -19,6 +19,8 @@ from geometry_msgs.msg import PoseStamped
 from moveit_msgs.msg import PlanningScene, PlanningSceneComponents, AllowedCollisionEntry, AllowedCollisionMatrix
 from moveit_msgs.srv import GetPlanningScene, ApplyPlanningScene
 from ppb_Benchmark import *
+import serial
+import time
 # base pose : position [0.6972, 0, 0.8] orientation [0, 90, 0]
 # vary poses based on the base pose. 
 
@@ -245,10 +247,10 @@ def readfile(filename):
 
 def main():
 	# set initial pose and base pose
-	initial_pose = [0.03, -0.44, 0.05, 90, 180, 0] # about 10 cm away from object
+	initial_pose = [0.03, -0.54, 0.05, 90, 180, 0] # about 10 cm away from object
 	# base_pose = [0.01, (-0.44-0.0114), 0.01, 90, 0, 0] # make it closer to object
-	lift_pose = [0.03, (-0.44-0.114), 0.2, 90, 180, 0] # about 10 cm away from object
-	base_pose = [0.03, (-0.44-0.114), 0.01, 90, 180, 0] # make it closer to object
+	lift_pose = [0.03, (-0.54-0.134), 0.2, 90, 180, 0] # about 10 cm away from object
+	base_pose = [0.03, (-0.54-0.134), 0.01, 90, 180, 0] # make it closer to object
 
 	# set pose extremes and increments
 	pExt = [0.06, 0.06, 0.0, 0.04, 0.0, 0.06]
@@ -270,15 +272,18 @@ def main():
 		# NOTE !!! we need to know where and how to locate only x translations
 		
 
-# [0.2404208367983245, -1.5445757364668444, 1.3646835261433548]
 	# initialize robot
 	Robot = robot("kinova")
 	# Robot.allow_collision()
 	Robot.scene.remove_world_object()
 	Robot.planner_type("RRT")
+	
+	# read reset port
+	ser = serial.Serial('/dev/ttyACM0')
+
 	# print Robot.group.get_current_rpy()
 	# Robot.move_to_Goal(initial_pose)
-	Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.54, (-0.05 + 0.165625 + 0.01), 1.0], "cube") # get cube
+	Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.66, (-0.05 + 0.165625 + 0.01), 1.0], "cube") # get cube
 	rospy.sleep(2)
 	Robot.move_to_Goal(initial_pose)
 	Robot.scene.remove_world_object()
@@ -294,6 +299,25 @@ def main():
 	Robot.move_to_Goal(lift_pose)
 	Robot.move_finger("Open")
 	
+	time.sleep(3)
+
+	ser.write('r')
+
+	while 1:
+		tdata = ser.read()           # Wait forever for anything
+		print tdata 
+		if tdata =='d':
+			print 'yes'
+			break 
+		time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
+		data_left = ser.inWaiting()  # Get the number of characters ready to be read
+		tdata += ser.read(data_left)	
+
+	# reset object
+	# reset = serial.Serial("/dev/ttyUSB0")
+
+
+
 	# for i in range(len(ppB.all_Poses)):
 	# 	Robot.planner_type("RRT")
 	# 	Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.54, (-0.05 + 0.165625 + 0.01), 1.0], "cube") # get cube
