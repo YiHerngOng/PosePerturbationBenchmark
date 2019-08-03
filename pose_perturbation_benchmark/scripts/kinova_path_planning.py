@@ -252,54 +252,83 @@ def readfile(filename):
 
 	return all_Poses # make sure all poses are float 
 
+
 def main():
-	# set initial pose and base pose
-	initial_pose = [0.03, -0.54, 0.05, 90, 180, 0] # about 10 cm away from object
-	# base_pose = [0.01, (-0.44-0.0114), 0.01, 90, 0, 0] # make it closer to object
-	lift_pose = [-0.07, (-0.54-0.124), 0.2, 90, 180, 0] # about 10 cm away from object
+	# Open reset port
+	ser = serial.Serial('/dev/ttyACM0')
+
+	# Set initial pose and base pose
+	initial_pose = [0.03, -0.54, 0.05, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
+	lift_pose = [-0.07, (-0.54-0.124), 0.2, 90, 180, 0] # lifting object
 	base_pose = [0.03, (-0.54-0.124), 0.01, 90, 180, 0] # make it closer to object
 
-	# set pose extremes and increments
+	# Set pose extremes and increments
 	pExt = [0.06, 0.06, 0.0, 0.04, 0.0, 0.06]
 	oExt = [45, 45, 45, 45, 30, 30]
 	pInc = [0.02,0.02,0.02]
 	oInc = [15,15,15]
 
-	# compute pose extremes for robot hand
+	# Compute pose extremes for robot hand
 	ppB = ppBenchmark(initial_pose, pExt, oExt, pInc, oInc)
 	ppB.get_z()
 
-	# compute limits
+	# Compute limits
 	ppB.sampling_limits()
-	# test limits and conduct binary search
+
+	# Test limits and conduct binary search
 	for each_axis_limits in ppB.all_limits:
 		temp = each_axis_limits[:]
 		for limit in range(len(temp)):
-			# move to one extreme
+			# Move to home pose
+			Robot.move_to_Goal(initial_pose)
+			# Move to one extreme
 			Robot.move_to_Goal(limit)
-			ser = serial.Serial()
+			# Move closer to object
+			Robot.move_to_Goal()
+			# Grasp
+			Robot.move_finger("Close")
+			# Lift
+			Robot.move_to_Goal(lift_pose)
+			# Check if grasp succeeds
+			######
+			# Camera code goes in here
+			if grasp_result() == "yes":
+				# grasp suceed
+				print "grasp success"
+			else:
+				# grasp failed
+				print "grasp fails"
+			######
+			# Open grasp
+			Robot.move_finger("Open")
+			# Reset
+			ser.write('r')
+			while 1:
+				tdata = ser.read() # Wait forever for anything
+				print tdata 
+				if tdata =='d':
+					print 'yes'
+					break 
+				time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
+				data_left = ser.inWaiting()  # Get the number of characters ready to be read
+				tdata += ser.read(data_left)	
+
+	# Compute all pose variations
 	ppB.sampling_all_Poses()
 
 	# ppB.save_poses_into_csv("test_posefile")
 
-	# read file 
-	# all_Poses = readfile()
-	# pick an axis from xyz 
-	# rand_translation = get_random_translation()
-	# if rand_translation == 'x':
-		# NOTE !!! we need to know where and how to locate only x translations
 		
 
-	# initialize robot
+	# Initialization
 	Robot = robot("kinova")
-	# Robot.allow_collision()
 	Robot.scene.remove_world_object()
+
+	# Set planner type
 	Robot.planner_type("RRT")
 	
-	# read reset port
-	ser = serial.Serial('/dev/ttyACM0')
+	# Read reset port
 
-	# print Robot.group.get_current_rpy()
 	# Robot.move_to_Goal(initial_pose)
 	Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.66, (-0.05 + 0.165625 + 0.01), 1.0], "cube") # get cube
 	rospy.sleep(2)
