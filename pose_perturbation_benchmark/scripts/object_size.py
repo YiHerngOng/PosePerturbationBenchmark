@@ -14,18 +14,26 @@ Output: Dimension of each shape
 units: Be consistent
 '''
 class Get_object_sizes(object):
-	def __init__(self, robot_name, width, height, depth):
+	def __init__(self, robot_name, width, height, depth, table_to_hand_distance):
 		self.w = width
 		self.h = height
 		self.d = depth
+		self.table_to_hand_distance = table_to_hand_distance
 		self.robot_name = robot_name
 
+	# Note : Height of cube + 2.54 cm
 	def Cube(self):
-		XCube = self.w * 0.75
-		MCube = self.w * 0.5
-		SCube = self.w * 0.25
+		# Max
+		Xwidth = self.w * 0.75
+		Xheight = Xwidth + self.table_to_hand_distance
+		# Mid 
+		Mwidth = self.w * 0.5
+		Mheight = Mwidth + self.table_to_hand_distance
+		# Min
+		Swidth = self.w * 0.25
+		Sheight = Swidth + self.table_to_hand_distance
 
-		return [XCube, MCube, SCube]
+		return [[Xwidth, Xheight], [MCube, Mheight], [SCube, Sheight]]
 
 	def Cylinder(self):
 		# Max
@@ -33,7 +41,7 @@ class Get_object_sizes(object):
 		Xheight = self.h * 3
 		# Mid 
 		Mradius = self.w * 0.5
-		Mheight = self.h *2
+		Mheight = self.h * 2
 		# Min
 		Sradius = self.w * 0.25
 		Sheight = self.h 

@@ -19,7 +19,7 @@ from tf import transformations
 import serial
 from object_size import *
 from geometry_msgs.msg import PoseStamped
-
+from object_size import *
 '''
 Pose perturbation benchmark:
 1. Select object 
@@ -42,6 +42,32 @@ class ppBenchmark():
 		self._oIncrement = oIncrement # [rinc, pinc, winc]
 		self._basePose = base_pose # [x, y, z, r, p, w]
 		self.z = [base_pose[2]]
+
+	def get_X_limits(self, hand_width, obj_width, increment):
+		x_limit = math.floor((hand_width - obj_width) / 2)
+		self.x_extremes = [x_limit, x_limit]
+		self.x_increment = increment
+		return self.x_extremes, self.x_increment
+
+	def get_Y_limits(self, hand_depth, obj_depth, increment):
+		y_backward_limit = math.floor(obj_width / 2)
+		y_forward_limit = math.floor(hand_depth, obj_depth)
+		self.y_extremes = [y_backward_limit, y_forward_limit]
+		self.y_increment = increment
+
+		return self.y_extremes, self.y_increment
+
+	# Note: We only look at the location of palm center
+	def get_Z_limits(self, hand_height, table_to_hand_distance, obj_height, increment):
+		palm_center_loc = ((hand_height / 2 ) + table_to_hand_distance)
+		if palm_center_loc < obj_height:
+			z_limit = math.floor(obj_height - palm_center_loc)
+			self.z_extremes = [0.0, z_limit]
+		else:
+			self.z_extremes = [0.0, 0.0]
+
+		self.z_increment = increment
+		return self.z_extremes, self.z_increment
 
 	def samplingPoses(self, ext, inc, axis, poses):
 		# min_numPose = ext[0] / inc
