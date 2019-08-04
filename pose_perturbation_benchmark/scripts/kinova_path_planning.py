@@ -262,17 +262,31 @@ def main():
 	lift_pose = [-0.07, (-0.54-0.124), 0.2, 90, 180, 0] # lifting object
 	base_pose = [0.03, (-0.54-0.124), 0.01, 90, 180, 0] # make it closer to object
 
-	# Set pose extremes and increments
-	pExt = [0.06, 0.06, 0.0, 0.04, 0.0, 0.06]
-	oExt = [45, 45, 45, 45, 30, 30]
-	pInc = [0.02,0.02,0.02]
-	oInc = [15,15,15]
+	# Get pose extremes and increments based on object size and type
 
-	# Compute pose extremes for robot hand
-	ppB = ppBenchmark(initial_pose, pExt, oExt, pInc, oInc)
+	# Hand geometry
+	hand_width = 0.175
+	hand_height = 0.08
+	hand_depth = 0.08
+	table_to_hand_distance = 0.0254 # the height of the gripper
+
+	# small retangular block (can apply on other small objects as well)
+	obj_width = 0.04375
+	obj_depth = 0.04375
+	obj_height = 0.04375 + table_to_hand_distance
+	trans_inc = 0.02
+	orien_inc = 15
+
+	ppB = ppBenchmark(hand_width, hand_depth, hand_height, table_to_hand_distance, obj_width, obj_depth, obj_height, trans_inc, orien_inc, initial_pose)
+
+	ppB.get_X_limits()
+	ppB.get_Y_limits()
+	ppB.get_Z_limits()
 	ppB.get_z()
-
-	# Compute limits
+	ppB.get_y()
+	ppB.get_R_limits()
+	ppB.get_P_limits()
+	ppB.get_W_limits()
 	ppB.sampling_limits()
 
 	# Test limits and conduct binary search
