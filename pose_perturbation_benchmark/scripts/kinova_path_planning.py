@@ -252,6 +252,8 @@ def readfile(filename):
 
 	return all_Poses # make sure all poses are float 
 
+def RUN(Robot, pose, ):
+
 
 def main():
 	# Open reset port
@@ -284,54 +286,78 @@ def main():
 	ppB.get_Z_limits()
 	ppB.get_z()
 	ppB.get_y()
+	ppB.get_x()
 	ppB.get_R_limits()
 	ppB.get_P_limits()
 	ppB.get_W_limits()
+	ppB.get_r()
+	ppB.get_p()
+	ppB.get_w()
 	ppB.sampling_limits()
-
+	limits = ppB.get_actual_limits()
+	ranges = ppB.get_actual_ranges()
 	# Test limits and conduct binary search
 	# Randomly pick an axis. Conduct binary search
-	axis = random.randint(0,5)
-	for each_axis_limits in ppB.all_limits:
-		temp = each_axis_limits[:]
-		for pose in range(len(temp)):
-			
-			# Move to home pose
-			Robot.move_to_Goal(initial_pose)
-			# Move to one extreme
-			Robot.move_to_Goal(limit)
-			# Move closer to object
-			Robot.move_to_Goal()
-			# Grasp
-			Robot.move_finger("Close")
-			# Lift
-			Robot.move_to_Goal(lift_pose)
-			# Check if grasp succeeds
-			######
-			# Camera code goes in here
-			if grasp_result() == "yes":
-				# grasp suceed
-				print "grasp success"
-			else:
-				# grasp failed
-				print "grasp fails"
-			######
-			# Open grasp
-			Robot.move_finger("Open")
-			# Reset
-			ser.write('r')
-			while 1:
-				tdata = ser.read() # Wait forever for anything
-				print tdata 
-				if tdata =='d':
-					print 'yes'
-					break 
-				time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
-				data_left = ser.inWaiting()  # Get the number of characters ready to be read
-				tdata += ser.read(data_left)	
+
+
+	for _ in range(len(ppB.all_limits)):
+		axis = range(6)
+		chosen_axis = random.randint(0,5)
+		axis.pop(chosen_axis)
+		chosen_axis_poses  = ppB.all_limits[chosen_axis][:]
+		direction = range(2)
+		chosen_dir = random.randint(0,1) # 0 - min, 1 - max
+		# !!!check if this direction has done!!!
+		if not done:
+			for pose in chosen_axis_poses:
+				if len(ranges[chosen_axis][chosen_dir]) % 2 == 1: # odd
+					middle = ranges[((len(ranges) - 1) / 2)]
+				else: # even
+					middle = ranges[len(ranges) / 2]
+
+				if pose[chosen_axis] == middle:
+					print "limit found: ", pose[chosen_axis], pose
+					# Move to home pose
+					Robot.move_to_Goal(initial_pose)
+					# Move to one extreme
+					Robot.move_to_Goal(pose)
+					# Move closer to object
+					pose[1] -= 0.094
+					Robot.move_to_Goal(pose)
+					# Grasp
+					Robot.move_finger("Close")
+					# Lift
+					lift_pose = pose[:]
+					lift_pose[2] = 0.3 
+					Robot.move_to_Goal(lift_pose)
+					# Check if grasp succeeds
+					######
+					# Camera code goes in here
+					if grasp_result() == "yes":
+						# grasp suceed
+						print "grasp success"
+						print "print it on csv"
+					else:
+						# grasp failed
+						print "grasp fails"
+						print "print it on csv as limit"
+					######
+					# Open grasp
+					Robot.move_finger("Open")
+					# Reset
+					ser.write('r')
+					while 1:
+						tdata = ser.read() # Wait forever for anything
+						print tdata 
+						if tdata =='d':
+							print 'yes'
+							break 
+						time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
+						data_left = ser.inWaiting()  # Get the number of characters ready to be read
+						tdata += ser.read(data_left)	
 
 	# Compute all pose variations
-	ppB.sampling_all_Poses()
+	# ppB.sampling_all_Poses()
 
 	# ppB.save_poses_into_csv("test_posefile")
 
@@ -399,7 +425,10 @@ def main():
 	# 	rospy.sleep(2)	
 
 if __name__ == '__main__':
-	main()
+	# main()
+
+	Robot = robot('kinova')
+	Robot.move_to_Goal([0.03, -0.54, 0.05, 90, 210, 0])
 
 
 # pick a pose from benchmark
