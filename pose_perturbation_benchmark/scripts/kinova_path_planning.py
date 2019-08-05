@@ -28,6 +28,7 @@ from moveit_msgs.srv import GetPlanningScene, ApplyPlanningScene
 from ppb_Benchmark import *
 import serial
 import time
+from qrtest import main_f
 # base pose : position [0.6972, 0, 0.8] orientation [0, 90, 0]
 # vary poses based on the base pose. 
 
@@ -266,7 +267,7 @@ def main():
 
 	# Set initial pose and base pose
 	initial_pose = [0.03, -0.54, 0.05, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
-	lift_pose = [-0.07, (-0.54-0.124), 0.2, 90, 180, 0] # lifting object
+	lift_pose = [-0.24, -0.8325, 0.50, 90, 180, 0] # lifting object
 	base_pose = [0.03, (-0.54-0.124), 0.01, 90, 180, 0] # make it closer to object
 
 	# Get pose extremes and increments based on object size and type
@@ -286,97 +287,97 @@ def main():
 
 	ppB = ppBenchmark(hand_width, hand_depth, hand_height, table_to_hand_distance, obj_width, obj_depth, obj_height, trans_inc, orien_inc, initial_pose)
 
-	ppB.get_X_limits()
-	ppB.get_Y_limits()
-	ppB.get_Z_limits()
-	ppB.get_z()
-	ppB.get_y()
-	ppB.get_x()
-	ppB.get_R_limits()
-	ppB.get_P_limits()
-	ppB.get_W_limits()
-	ppB.get_r()
-	ppB.get_p()
-	ppB.get_w()
-	ppB.sampling_limits()
-	ppB.save_poses_into_csv("kg_s_rectblock")
-	limits = ppB.get_actual_limits()
-	ranges = ppB.get_actual_ranges()
-	# Test limits and conduct binary search
-	# Randomly pick an axis. Conduct binary search
+	# ppB.get_X_limits()
+	# ppB.get_Y_limits()
+	# ppB.get_Z_limits()
+	# ppB.get_z()
+	# ppB.get_y()
+	# ppB.get_x()
+	# ppB.get_R_limits()
+	# ppB.get_P_limits()
+	# ppB.get_W_limits()
+	# ppB.get_r()
+	# ppB.get_p()
+	# ppB.get_w()
+	# ppB.sampling_limits()
+	# ppB.save_poses_into_csv("kg_s_rectblock")
+	# limits = ppB.get_actual_limits()
+	# ranges = ppB.get_actual_ranges()
+	# # Test limits and conduct binary search
+	# # Randomly pick an axis. Conduct binary search
 
-	file = open("kg_s_rectblock" + ".csv", "wb")
+	# file = open("kg_s_rectblock" + ".csv", "wb")
 
 
-	for _ in range(len(ppB.all_limits)):
-		axis = range(6)
-		chosen_axis = random.randint(0,5)
-		axis.pop(chosen_axis)
-		chosen_axis_poses  = ppB.all_limits[chosen_axis][:]
-		direction = range(2)
-		chosen_dir = random.randint(0,1) # 0 - min, 1 - max
-		# !!!check if this direction has done!!!
-		if not done:
-			# find middle 
-			if len(ranges[chosen_axis][chosen_dir]) % 2 == 1: # odd
-				middle = ranges[((len(ranges) - 1) / 2)]
-			else: # even
-				middle = ranges[len(ranges) / 2]
+	# for _ in range(len(ppB.all_limits)):
+	# 	axis = range(6)
+	# 	chosen_axis = random.randint(0,5)
+	# 	axis.pop(chosen_axis)
+	# 	chosen_axis_poses  = ppB.all_limits[chosen_axis][:]
+	# 	direction = range(2)
+	# 	chosen_dir = random.randint(0,1) # 0 - min, 1 - max
+	# 	# !!!check if this direction has done!!!
+	# 	if not done:
+	# 		# find middle 
+	# 		if len(ranges[chosen_axis][chosen_dir]) % 2 == 1: # odd
+	# 			middle = ranges[((len(ranges) - 1) / 2)]
+	# 		else: # even
+	# 			middle = ranges[len(ranges) / 2]
 
-			for _ in range(len(ranges)):
-				target_pose = middle
-				for pose in chosen_axis_poses:
-					if pose[chosen_axis] == middle:
-						print "limit found: ", pose[chosen_axis], pose
-						# Move to home pose
-						Robot.move_to_Goal(initial_pose)
-						# Move to one extreme
-						Robot.move_to_Goal(pose)
-						# Move closer to object
-						pose[1] -= 0.094
-						Robot.move_to_Goal(pose)
-						# Grasp
-						Robot.move_finger("Close")
-						# Lift
-						lift_pose = pose[:]
-						lift_pose[2] = 0.3 
-						Robot.move_to_Goal(lift_pose)
-						# Check if grasp succeeds
-						######
-						# Camera code goes in here
-						if grasp_result() == "yes":
-							# grasp suceed
-							print "grasp success"
-							print "find the next harder pose"
-							pose += ["s"]
-							if (ranges.index(middle) + 1) != len(ranges):
-								target_pose = ranges[ranges.index(middle) + 1] # get next target pose
-							else:
-								print "found limits!"
-								break
-						else:
-							# grasp failed
-							print "grasp fails"
-							pose += ["f"]
-							inner_pose = ranges[ranges.index(middle) - 1]
-							success_pose_index = find_pose(chosen_axis_poses, inner_pose, chosen_axis)
-							chosen_axis_poses[success_pose_index] += ["s"]
-							print "mark the inner one as success"
-							break
-						######
-						# Open grasp
-						Robot.move_finger("Open")
-						# Reset
-						ser.write('r')
-						while 1:
-							tdata = ser.read() # Wait forever for anything
-							print tdata 
-							if tdata =='d':
-								print 'yes'
-								break 
-							time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
-							data_left = ser.inWaiting()  # Get the number of characters ready to be read
-							tdata += ser.read(data_left)	
+	# 		for _ in range(len(ranges)):
+	# 			target_pose = middle
+	# 			for pose in chosen_axis_poses:
+	# 				if pose[chosen_axis] == middle:
+	# 					print "limit found: ", pose[chosen_axis], pose
+	# 					# Move to home pose
+	# 					Robot.move_to_Goal(initial_pose)
+	# 					# Move to one extreme
+	# 					Robot.move_to_Goal(pose)
+	# 					# Move closer to object
+	# 					pose[1] -= 0.094
+	# 					Robot.move_to_Goal(pose)
+	# 					# Grasp
+	# 					Robot.move_finger("Close")
+	# 					# Lift
+	# 					lift_pose = pose[:]
+	# 					lift_pose[2] = 0.3 
+	# 					Robot.move_to_Goal(lift_pose)
+	# 					# Check if grasp succeeds
+	# 					######
+	# 					# Camera code goes in here
+	# 					if grasp_result() == "yes":
+	# 						# grasp suceed
+	# 						print "grasp success"
+	# 						print "find the next harder pose"
+	# 						pose += ["s"]
+	# 						if (ranges.index(middle) + 1) != len(ranges):
+	# 							target_pose = ranges[ranges.index(middle) + 1] # get next target pose
+	# 						else:
+	# 							print "found limits!"
+	# 							break
+	# 					else:
+	# 						# grasp failed
+	# 						print "grasp fails"
+	# 						pose += ["f"]
+	# 						inner_pose = ranges[ranges.index(middle) - 1]
+	# 						success_pose_index = find_pose(chosen_axis_poses, inner_pose, chosen_axis)
+	# 						chosen_axis_poses[success_pose_index] += ["s"]
+	# 						print "mark the inner one as success"
+	# 						break
+	# 					######
+	# 					# Open grasp
+	# 					Robot.move_finger("Open")
+	# 					# Reset
+	# 					ser.write('r')
+	# 					while 1:
+	# 						tdata = ser.read() # Wait forever for anything
+	# 						print tdata 
+	# 						if tdata =='d':
+	# 							print 'yes'
+	# 							break 
+	# 						time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
+	# 						data_left = ser.inWaiting()  # Get the number of characters ready to be read
+	# 						tdata += ser.read(data_left)	
 
 	# Compute all pose variations
 	# ppB.sampling_all_Poses()
@@ -395,7 +396,7 @@ def main():
 	# Read reset port
 
 	# Robot.move_to_Goal(initial_pose)
-	Robot.get_Object([0.13125, 0.13125, 0.33125], [0.0, -0.66, (-0.05 + 0.165625 + 0.01), 1.0], "cube") # get cube
+	Robot.get_Object([0.13125, 0.13125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube
 	rospy.sleep(2)
 	Robot.move_to_Goal(initial_pose) 
 	Robot.scene.remove_world_object()
@@ -407,9 +408,16 @@ def main():
 	Robot.move_finger("Close") # close grip
 
 	Robot.move_to_Goal(lift_pose)
+	grasp_status = main_f()
+	print grasp_status
 	Robot.move_finger("Open") # open grip, object will drop
 	
 	time.sleep(3)
+
+	Robot.get_Object([0.13125, 0.13125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube
+	rospy.sleep(2)
+	Robot.planner_type("RRT")
+	Robot.move_to_Goal(initial_pose)
 
 	ser.write('r') # reset starts
 
@@ -423,6 +431,7 @@ def main():
 		time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
 		data_left = ser.inWaiting()  # Get the number of characters ready to be read
 		tdata += ser.read(data_left)	
+	
 
 	# reset object
 	# reset = serial.Serial("/dev/ttyUSB0")
@@ -447,10 +456,10 @@ def main():
 	# 	rospy.sleep(2)	
 
 if __name__ == '__main__':
-	# main()
+	main()
 
-	Robot = robot('kinova')
-	Robot.move_to_Goal([0.03, -0.54, 0.05, 90, 210, 0])
+	# Robot = robot('kinova')
+	# Robot.move_to_Goal([0.03, -0.54, 0.05, 90, 210, 0])
 
 
 # pick a pose from benchmark
