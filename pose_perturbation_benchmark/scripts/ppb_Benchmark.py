@@ -82,7 +82,7 @@ class ppBenchmark():
 		self.y_increment = self.trans_inc
 		y_backward_limit = math.floor(self.obj_width / 2 * 100)
 		y_forward_limit = math.floor((self.hand_depth - self.obj_depth /2)*100) 
-		self.y_extremes = [self.y_increment * math.floor(y_backward_limit / (self.y_increment * 100)) , self.y_increment * math.floor(y_forward_limit / (self.y_increment * 100)) ]
+		self.y_extremes = [self.y_increment * math.floor(y_forward_limit / (self.y_increment * 100)) , self.y_increment * math.floor(y_backward_limit / (self.y_increment * 100)) ]
 		# self.y_extremes[0] 
 		# print self.y_increment * math.floor(y_backward_limit / (self.y_increment * 100))
 		# print self.y_extremes[1]
@@ -315,7 +315,7 @@ class ppBenchmark():
 		self.all_all_poses = self.x_only + self.y_only + self.z_only + self.r_only + self.p_only + self.w_only
 
 		# print self.r_extremes, self.r_increment, self.z
-		print self.r_only
+		# print self.r_only
 		# print "here",self.w_actual_limits
 
 	# This function is to calculate combinations 
@@ -452,8 +452,8 @@ class ppBenchmark():
 	def save_poses_into_csv(self, filename):
 		f =  filename + ".csv"
 		csv = open(f, "wb")
-		for i in range(len(self.all_Poses)):
-			temp = self.all_Poses[i]
+		for i in range(len(self.all_all_poses)):
+			temp = self.all_all_poses[i]
 			for j in range(len(temp)):
 				csv.write(str(temp[j]))
 				csv.write(",")
@@ -498,4 +498,5 @@ if __name__ == '__main__':
 	ppB.get_p()
 	ppB.get_w()
 	ppB.sampling_limits()
+	ppB.save_poses_into_csv("kinova_s_rectblock")
 

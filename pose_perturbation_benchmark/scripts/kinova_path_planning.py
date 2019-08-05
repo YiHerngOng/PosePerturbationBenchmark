@@ -252,7 +252,12 @@ def readfile(filename):
 
 	return all_Poses # make sure all poses are float 
 
-def RUN(Robot, pose, ):
+def find_pose(poses, single_pose, axis):
+	for pose in poses:
+		if pose[axis] == single_pose:
+			return poses.index(pose)
+		else:
+			return None
 
 
 def main():
@@ -294,10 +299,13 @@ def main():
 	ppB.get_p()
 	ppB.get_w()
 	ppB.sampling_limits()
+	ppB.save_poses_into_csv("kg_s_rectblock")
 	limits = ppB.get_actual_limits()
 	ranges = ppB.get_actual_ranges()
 	# Test limits and conduct binary search
 	# Randomly pick an axis. Conduct binary search
+
+	file = open("kg_s_rectblock" + ".csv", "wb")
 
 
 	for _ in range(len(ppB.all_limits)):
@@ -318,7 +326,6 @@ def main():
 			for _ in range(len(ranges)):
 				target_pose = middle
 				for pose in chosen_axis_poses:
-
 					if pose[chosen_axis] == middle:
 						print "limit found: ", pose[chosen_axis], pose
 						# Move to home pose
@@ -340,12 +347,22 @@ def main():
 						if grasp_result() == "yes":
 							# grasp suceed
 							print "grasp success"
-							print "find the next one"
-							target_pose 
+							print "find the next harder pose"
+							pose += ["s"]
+							if (ranges.index(middle) + 1) != len(ranges):
+								target_pose = ranges[ranges.index(middle) + 1] # get next target pose
+							else:
+								print "found limits!"
+								break
 						else:
 							# grasp failed
 							print "grasp fails"
+							pose += ["f"]
+							inner_pose = ranges[ranges.index(middle) - 1]
+							success_pose_index = find_pose(chosen_axis_poses, inner_pose, chosen_axis)
+							chosen_axis_poses[success_pose_index] += ["s"]
 							print "mark the inner one as success"
+							break
 						######
 						# Open grasp
 						Robot.move_finger("Open")
