@@ -53,20 +53,26 @@ class ppBenchmark():
 		self.trans_inc = trans_inc
 		self.orien_inc = orien_inc
 
+
 	def get_X_limits(self):
 		x_limit = math.floor((self.hand_width - self.obj_width) / 2 * 100)
 		# print x_limit
 		self.x_extremes = [x_limit / 100, x_limit / 100]
 		self.x_increment = self.trans_inc
-		return self.x_extremes, self.x_increment
+		self.x_actual_limits = [self._basePose[0] - self.x_extremes[0], self._basePose[0] + self.x_extremes[1]]
+		# return self.x_extremes, self.x_increment
 
 	def get_Y_limits(self):
-		y_backward_limit = math.floor(self.obj_width / 2 * 100)
-		y_forward_limit = math.floor((self.hand_depth - self.obj_depth)*100)
-		self.y_extremes = [y_backward_limit / 100, y_forward_limit / 100]
 		self.y_increment = self.trans_inc
-
-		return self.y_extremes, self.y_increment
+		y_backward_limit = math.floor(self.obj_width / 2 * 100)
+		y_forward_limit = math.floor((self.hand_depth - self.obj_depth /2)*100) 
+		self.y_extremes = [self.y_increment * math.floor(y_backward_limit / (self.y_increment * 100)) , self.y_increment * math.floor(y_forward_limit / (self.y_increment * 100)) ]
+		# self.y_extremes[0] 
+		# print self.y_increment * math.floor(y_backward_limit / (self.y_increment * 100))
+		# print self.y_extremes[1]
+		self.y_actual_limits = [self._basePose[1] - self.y_extremes[0], self._basePose[1] + self.y_extremes[1]]
+		# print self.y_actual_limits
+		# return self.y_extremes, self.y_increment
 
 	# Note: We only look at the location of palm center
 	def get_Z_limits(self):
@@ -79,21 +85,25 @@ class ppBenchmark():
 			# print z_limit
 		else:
 			self.z_extremes = [0.0, 0.0]
+		
+		self.z_actual_limits = [self._basePose[2] - self.z_extremes[0], self._basePose[2] + self.z_extremes[1]]
 
 		self.z_increment = self.trans_inc
-		return self.z_extremes, self.z_increment
+		# return self.z_extremes, self.z_increment
 
 	def get_R_limits(self):
 		# based on reachable z 
 		# length = len(self.z)
 		# print self.z
 		if len(self.z) > 1:
-			print "here"
+			# print "here"
 			self.r_extremes = [15*(len(self.z) - 1), 15*(len(self.z) - 1)]
 		else:
 			self.r_extremes = [0 , 0]
 		self.r_increment = self.orien_inc
-		return self.r_extremes, self.r_increment
+		self.r_actual_limits = [self._basePose[3] - self.r_extremes[0], self._basePose[3] + self.r_extremes[1]]
+
+		# return self.r_extremes, self.r_increment
 
 	def get_P_limits(self):
 		# based on reachable z
@@ -103,14 +113,18 @@ class ppBenchmark():
 		else:
 			self.p_extremes = [0 , 0]
 		self.p_increment = self.orien_inc
-		print self.p_extremes
-		return self.p_extremes, self.p_increment
+		self.p_actual_limits = [self._basePose[4] - self.p_extremes[0], self._basePose[4] + self.p_extremes[1]]
+
+		# print self.p_extremes, self.p_actual_limits
+		# return self.p_extremes, self.p_increment
 
 	def get_W_limits(self):
 		# length = len(y_list)
 		self.w_extremes = [30, 30]
 		self.w_increment = self.orien_inc
-		return self.w_extremes, self.w_increment
+		self.w_actual_limits = [self._basePose[5] - self.w_extremes[0], self._basePose[5] + self.w_extremes[1]]
+
+		# return self.w_extremes, self.w_increment
 
 	def samplingPoses(self, ext, inc, axis, poses):
 		# min_numPose = ext[0] / inc
@@ -136,7 +150,7 @@ class ppBenchmark():
 			else:
 				min_numPose = math.ceil(ext[0] / inc)
 
-			for _ in range(int(min_numPose)):
+			for i in range(int(min_numPose)):
 				# print "min_numPose", min_numPose
 				pose[axis] -= inc
 				temp = pose[:]
@@ -160,8 +174,8 @@ class ppBenchmark():
 				max_numPose = 2
 			else:
 				max_numPose = math.ceil(ext[1] / inc)
-				# if axis ==2:
-					# print max_numPose
+				# if axis ==1:
+					# print "here",max_numPose
 			for i in range(int(max_numPose)):
 				pose[axis] += inc
 				temp = pose[:]		
@@ -187,7 +201,7 @@ class ppBenchmark():
 		for xdz in range(int(max_zPose)):
 			maxbase_z += self.z_increment
 			self.z.append(maxbase_z)		
-		# print self.z
+		print self.z
 
 	def get_y(self):
 		min_yPose = math.ceil(self.y_extremes[0] / self.y_increment)
@@ -201,7 +215,8 @@ class ppBenchmark():
 		for xdy in range(int(max_yPose)):
 			maxbase_y += self.y_increment
 			self.y.append(maxbase_y)		
-		print self.y		
+		# print self.y		
+
 	def sampling_limits(self):
 		self.x_only = []
 		self.y_only = []
@@ -221,7 +236,8 @@ class ppBenchmark():
 		self.all_all_poses = self.x_only + self.y_only + self.z_only + self.r_only + self.p_only + self.w_only
 
 		# print self.r_extremes, self.r_increment, self.z
-		print self.x_only
+		# print self.p_only
+		# print "here",self.w_actual_limits
 	# This function is to calculate combinations 
 	# def sampling_all_Poses(self):
 	# 	self.all_Poses = []

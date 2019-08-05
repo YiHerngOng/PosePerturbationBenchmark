@@ -290,9 +290,12 @@ def main():
 	ppB.sampling_limits()
 
 	# Test limits and conduct binary search
+	# Randomly pick an axis. Conduct binary search
+	axis = random.randint(0,5)
 	for each_axis_limits in ppB.all_limits:
 		temp = each_axis_limits[:]
-		for limit in range(len(temp)):
+		for pose in range(len(temp)):
+			
 			# Move to home pose
 			Robot.move_to_Goal(initial_pose)
 			# Move to one extreme
