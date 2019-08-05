@@ -309,52 +309,57 @@ def main():
 		chosen_dir = random.randint(0,1) # 0 - min, 1 - max
 		# !!!check if this direction has done!!!
 		if not done:
-			for pose in chosen_axis_poses:
-				if len(ranges[chosen_axis][chosen_dir]) % 2 == 1: # odd
-					middle = ranges[((len(ranges) - 1) / 2)]
-				else: # even
-					middle = ranges[len(ranges) / 2]
+			# find middle 
+			if len(ranges[chosen_axis][chosen_dir]) % 2 == 1: # odd
+				middle = ranges[((len(ranges) - 1) / 2)]
+			else: # even
+				middle = ranges[len(ranges) / 2]
 
-				if pose[chosen_axis] == middle:
-					print "limit found: ", pose[chosen_axis], pose
-					# Move to home pose
-					Robot.move_to_Goal(initial_pose)
-					# Move to one extreme
-					Robot.move_to_Goal(pose)
-					# Move closer to object
-					pose[1] -= 0.094
-					Robot.move_to_Goal(pose)
-					# Grasp
-					Robot.move_finger("Close")
-					# Lift
-					lift_pose = pose[:]
-					lift_pose[2] = 0.3 
-					Robot.move_to_Goal(lift_pose)
-					# Check if grasp succeeds
-					######
-					# Camera code goes in here
-					if grasp_result() == "yes":
-						# grasp suceed
-						print "grasp success"
-						print "print it on csv"
-					else:
-						# grasp failed
-						print "grasp fails"
-						print "print it on csv as limit"
-					######
-					# Open grasp
-					Robot.move_finger("Open")
-					# Reset
-					ser.write('r')
-					while 1:
-						tdata = ser.read() # Wait forever for anything
-						print tdata 
-						if tdata =='d':
-							print 'yes'
-							break 
-						time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
-						data_left = ser.inWaiting()  # Get the number of characters ready to be read
-						tdata += ser.read(data_left)	
+			for _ in range(len(ranges)):
+				target_pose = middle
+				for pose in chosen_axis_poses:
+
+					if pose[chosen_axis] == middle:
+						print "limit found: ", pose[chosen_axis], pose
+						# Move to home pose
+						Robot.move_to_Goal(initial_pose)
+						# Move to one extreme
+						Robot.move_to_Goal(pose)
+						# Move closer to object
+						pose[1] -= 0.094
+						Robot.move_to_Goal(pose)
+						# Grasp
+						Robot.move_finger("Close")
+						# Lift
+						lift_pose = pose[:]
+						lift_pose[2] = 0.3 
+						Robot.move_to_Goal(lift_pose)
+						# Check if grasp succeeds
+						######
+						# Camera code goes in here
+						if grasp_result() == "yes":
+							# grasp suceed
+							print "grasp success"
+							print "find the next one"
+							target_pose 
+						else:
+							# grasp failed
+							print "grasp fails"
+							print "mark the inner one as success"
+						######
+						# Open grasp
+						Robot.move_finger("Open")
+						# Reset
+						ser.write('r')
+						while 1:
+							tdata = ser.read() # Wait forever for anything
+							print tdata 
+							if tdata =='d':
+								print 'yes'
+								break 
+							time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
+							data_left = ser.inWaiting()  # Get the number of characters ready to be read
+							tdata += ser.read(data_left)	
 
 	# Compute all pose variations
 	# ppB.sampling_all_Poses()
