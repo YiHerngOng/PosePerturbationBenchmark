@@ -146,7 +146,7 @@ class ppBenchmark():
 		return [self.x_actual_limits, self.y_actual_limits, self.z_actual_limits, self.r_actual_limits, self.p_actual_limits, self.w_actual_limits]
 	
 	def get_actual_ranges(self):
-		return [[self.minx, self.maxx], [self.miny, self.maxy], [self.z, self.z], [self.minr, self.maxr], [self.minp, self.maxp], [self.minw, self.maxw]]
+		return [[self.minx, self.maxx], [self.miny, self.maxy], [self.z], [self.minr, self.maxr], [self.minp, self.maxp], [self.minw, self.maxw]]
 
 	def samplingPoses(self, ext, inc, axis, poses):
 		# min_numPose = ext[0] / inc
