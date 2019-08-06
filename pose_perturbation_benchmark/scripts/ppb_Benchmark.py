@@ -111,12 +111,13 @@ class ppBenchmark():
 		# based on reachable z 
 		# length = len(self.z)
 		# print self.z
-		if len(self.z) > 1:
-			# print "here"
-			self.r_extremes = [15*(len(self.z)), 15*(len(self.z))]
-		else:
-			self.r_extremes = [0 , 0]
+		# if len(self.z) > 1:
+		# 	# print "here"
+		# 	self.r_extremes = [15*(len(self.z)), 15*(len(self.z))]
+		# else:
+		# 	self.r_extremes = [0 , 0]
 		self.r_increment = self.orien_inc
+		self.r_extremes = [45, 45]
 		self.r_actual_limits = [self._basePose[3] - self.r_extremes[0], self._basePose[3] + self.r_extremes[1]]
 
 		# return self.r_extremes, self.r_increment
@@ -124,11 +125,12 @@ class ppBenchmark():
 	def get_P_limits(self):
 		# based on reachable z
 		# length = len(z_list)
-		if len(self.z) > 1:
-			self.p_extremes = [15*(len(self.z)), 15*(len(self.z))]
-		else:
-			self.p_extremes = [0 , 0]
+		# if len(self.z) > 1:
+		# 	self.p_extremes = [15*(len(self.z)), 15*(len(self.z))]
+		# else:
+		# 	self.p_extremes = [0 , 0]
 		self.p_increment = self.orien_inc
+		self.p_extremes = [45, 45]
 		self.p_actual_limits = [self._basePose[4] - self.p_extremes[0], self._basePose[4] + self.p_extremes[1]]
 
 		# print self.p_extremes, self.p_actual_limits
@@ -148,6 +150,49 @@ class ppBenchmark():
 	def get_actual_ranges(self):
 		return [[self.minx, self.maxx], [self.miny, self.maxy], [self.z], [self.minr, self.maxr], [self.minp, self.maxp], [self.minw, self.maxw]]
 
+	def sampling_rotation(self, ext, inc, axis, poses):
+		if axis == 3 or axis == 4: # pitch
+			pose = self._basePose[:]
+			min_numPose = 3
+			new_minposes = []
+			for i in range(min_numPose):
+				pose[axis] -= inc
+				pose[2] += 0.02
+				temp = pose[:]
+				new_minposes.append(temp)
+
+			max_numPose = 3
+			new_maxposes = []
+			pose = self._basePose[:]
+			for i in range(max_numPose):
+				pose[axis] += inc
+				pose[2] += 0.02
+				temp = pose[:]
+				new_maxposes.append(temp)
+
+			return new_minposes + new_maxposes
+
+		if axis == 5: 
+			min_numPose = 2
+			pose = self._basePose[:]
+			new_minposes = []
+			for j in range(min_numPose):
+				pose[axis] -= inc
+				pose[1] += 0.02
+				temp = pose[:]
+				new_minposes.append(temp)
+			max_numPose = 2
+			pose = self._basePose[:]
+			new_maxposes = []				
+			for j in range(max_numPose):
+				pose[axis] -= inc
+				pose[1] += 0.02
+				temp = pose[:]
+				new_maxposes.append(temp)			
+			
+			return new_minposes + new_maxposes
+
+
 	def samplingPoses(self, ext, inc, axis, poses):
 		# min_numPose = ext[0] / inc
 		if len(poses) == 0:
@@ -157,59 +202,26 @@ class ppBenchmark():
 
 		new_poses = []
 		for pose in min_poses:
-
-			if axis == 3 and pose[2] == self._basePose[2]:
-				# print pose
-				continue # roll cannot have hand facing up
-			elif axis == 4 and pose[2] == self._basePose[2]:
-				continue
-			elif axis == 5 and pose[1] == self._basePose[1]:
-				min_numPose = 1
-			elif axis == 5 and pose[1] == self.miny[0]:
-				continue
-			elif (axis == 3 or axis == 4) and pose[2] == self.z[0]:
-				min_numPose = 2
-			else:
-				min_numPose = math.ceil(ext[0] / inc)
+			min_numPose = math.ceil(ext[0] / inc)
 
 			for i in range(int(min_numPose)):
 				# print "min_numPose", min_numPose
 				pose[axis] -= inc
 				temp = pose[:]
-				if axis == 3 or axis == 4 or axis == 5:
-					new_poses.append(temp)
-				else:
-					poses.append(temp)
+				poses.append(temp)
 
 
 		# max_numPose = ext[1] / inc
 		for pose in max_poses:
-			if (axis == 3) and pose[2] == self._basePose[2]:
-				max_numPose = 1
-			elif axis == 4 and pose[2] == self._basePose[2]:
-				continue
-			elif axis == 5 and pose[1] == self._basePose[1]:
-				max_numPose = 1
-			elif axis == 5 and pose[1] == self.miny[0]:
-				continue
-			elif (axis == 3 or axis == 4) and pose[2] == self.z[0]:
-				max_numPose = 2
-			else:
-				max_numPose = math.ceil(ext[1] / inc)
+			max_numPose = math.ceil(ext[1] / inc)
 				# if axis ==1:
 					# print "here",max_numPose
 			for i in range(int(max_numPose)):
 				pose[axis] += inc
 				temp = pose[:]		
-				if axis == 3 or axis == 4 or axis == 5:
-					new_poses.append(temp)
-				else:
-					poses.append(temp)
+				poses.append(temp)
 
-		if axis == 3 or axis == 4 or axis == 5:
-			return new_poses
-		else:
-			return poses
+		return poses
 
 	def get_z(self):
 		min_zPose = math.ceil(self.z_extremes[0] / self.z_increment)
@@ -223,7 +235,7 @@ class ppBenchmark():
 		for xdz in range(int(max_zPose)):
 			maxbase_z += self.z_increment
 			self.z.append(maxbase_z)		
-		print self.z
+		# print self.z
 
 	def get_y(self):
 		min_yPose = math.ceil(self.y_extremes[0] / self.y_increment)
@@ -237,7 +249,7 @@ class ppBenchmark():
 		for xdy in range(int(max_yPose)):
 			maxbase_y += self.y_increment
 			self.maxy.append(maxbase_y)		
-		print self.miny, self.maxy	
+		# print self.miny, self.maxy	
 
 	def get_x(self):
 		min_xPose = math.ceil(self.x_extremes[0] / self.x_increment)
@@ -251,7 +263,7 @@ class ppBenchmark():
 		for xdy in range(int(max_xPose)):
 			maxbase_x += self.x_increment
 			self.maxx.append(maxbase_x)
-		print self.minx, self.maxx	
+		# print self.minx, self.maxx	
 
 	def get_r(self):
 		min_rPose = math.ceil(self.r_extremes[0] / self.r_increment)
@@ -265,7 +277,7 @@ class ppBenchmark():
 		for xdy in range(int(max_rPose)):
 			maxbase_r += self.r_increment
 			self.maxr.append(maxbase_r)
-		print self.minr, self.maxr
+		# print self.minr, self.maxr
 
 
 	def get_p(self):
@@ -280,7 +292,7 @@ class ppBenchmark():
 		for xdy in range(int(max_pPose)):
 			maxbase_p += self.p_increment
 			self.maxp.append(maxbase_p)
-		print self.minp, self.maxp
+		# print self.minp, self.maxp
 
 	def get_w(self):
 		min_wPose = math.ceil(self.w_extremes[0] / self.w_increment)
@@ -294,7 +306,7 @@ class ppBenchmark():
 		for xdy in range(int(max_wPose)):
 			maxbase_w += self.w_increment
 			self.maxw.append(maxbase_w)
-		print self.minw, self.maxw
+		# print self.minw, self.maxw
 
 	def sampling_limits(self):
 		self.x_only = []
@@ -307,15 +319,15 @@ class ppBenchmark():
 		self.x_only = self.samplingPoses((self.x_extremes[0], self.x_extremes[1]), self.x_increment, 0, self.x_only) # left-right
 		self.y_only = self.samplingPoses((self.y_extremes[0], self.y_extremes[1]), self.y_increment, 1, self.y_only) # close-far
 		self.z_only = self.samplingPoses((self.z_extremes[0], self.z_extremes[1]), self.z_increment, 2, self.z_only) # up-down
-		self.r_only = self.samplingPoses((self.r_extremes[0], self.r_extremes[1]), self.r_increment, 3, self.z_only) # rotate about x
-		self.p_only = self.samplingPoses((self.p_extremes[0], self.p_extremes[1]), self.p_increment, 4, self.z_only) # rotate about y
-		self.w_only = self.samplingPoses((self.w_extremes[0], self.w_extremes[1]), self.w_increment, 5, self.y_only) # rotate about z
+		self.r_only = self.sampling_rotation((self.r_extremes[0], self.r_extremes[1]), self.r_increment, 3, self.r_only) # rotate about x
+		self.p_only = self.sampling_rotation((self.p_extremes[0], self.p_extremes[1]), self.p_increment, 4, self.p_only) # rotate about y
+		self.w_only = self.sampling_rotation((self.w_extremes[0], self.w_extremes[1]), self.w_increment, 5, self.w_only) # rotate about z
 
 		self.all_limits = [self.x_only, self.y_only, self.z_only, self.r_only, self.p_only, self.w_only]
 		self.all_all_poses = self.x_only + self.y_only + self.z_only + self.r_only + self.p_only + self.w_only
 
-		# print self.r_extremes, self.r_increment, self.z
-		# print self.r_only
+		print self.maxp
+		print self.r_only
 		# print "here",self.w_actual_limits
 
 	# This function is to calculate combinations 
