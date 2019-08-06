@@ -43,6 +43,8 @@ class ppBenchmark():
 		self._basePose = base_pose # [x, y, z, r, p, w]
 		# self.minz = []
 		# self.maxz = []
+
+
 		self.z = []
 		self.miny = []
 		self.maxy = []
@@ -157,6 +159,10 @@ class ppBenchmark():
 			new_minposes = []
 			for i in range(min_numPose):
 				pose[axis] -= inc
+				if axis == 3:
+					self.minr.append(pose[axis])
+				if axis == 4:
+					self.minp.append(pose[axis])				
 				pose[2] += 0.02
 				temp = pose[:]
 				new_minposes.append(temp)
@@ -166,6 +172,10 @@ class ppBenchmark():
 			pose = self._basePose[:]
 			for i in range(max_numPose):
 				pose[axis] += inc
+				if axis == 3:
+					self.maxr.append(pose[axis])	
+				if axis == 4:
+					self.maxp.append(pose[axis])									
 				pose[2] += 0.02
 				temp = pose[:]
 				new_maxposes.append(temp)
@@ -178,6 +188,7 @@ class ppBenchmark():
 			new_minposes = []
 			for j in range(min_numPose):
 				pose[axis] -= inc
+				self.minw.append(pose[axis])					
 				pose[1] += 0.02
 				temp = pose[:]
 				new_minposes.append(temp)
@@ -185,7 +196,8 @@ class ppBenchmark():
 			pose = self._basePose[:]
 			new_maxposes = []				
 			for j in range(max_numPose):
-				pose[axis] -= inc
+				pose[axis] += inc
+				self.maxw.append(pose[axis])					
 				pose[1] += 0.02
 				temp = pose[:]
 				new_maxposes.append(temp)			
@@ -203,10 +215,13 @@ class ppBenchmark():
 		new_poses = []
 		for pose in min_poses:
 			min_numPose = math.ceil(ext[0] / inc)
-
 			for i in range(int(min_numPose)):
 				# print "min_numPose", min_numPose
 				pose[axis] -= inc
+				if axis == 0:
+					self.minx.append(pose[axis])
+				elif axis == 1:
+					self.miny.append(pose[axis])
 				temp = pose[:]
 				poses.append(temp)
 
@@ -214,99 +229,18 @@ class ppBenchmark():
 		# max_numPose = ext[1] / inc
 		for pose in max_poses:
 			max_numPose = math.ceil(ext[1] / inc)
-				# if axis ==1:
-					# print "here",max_numPose
 			for i in range(int(max_numPose)):
 				pose[axis] += inc
+				if axis == 0:
+					self.maxx.append(pose[axis])
+				elif axis == 1:
+					self.maxy.append(pose[axis])
+				elif axis == 2:
+					self.z.append(pose[axis])					
 				temp = pose[:]		
 				poses.append(temp)
 
 		return poses
-
-	def get_z(self):
-		min_zPose = math.ceil(self.z_extremes[0] / self.z_increment)
-		max_zPose = math.ceil(self.z_extremes[1] / self.z_increment)
-		minbase_z = deepcopy(self._basePose[2])
-		for mdz in range(int(min_zPose)):
-			minbase_z -= self.z_increment
-			self.z.append(minbase_z)
-
-		maxbase_z = deepcopy(self._basePose[2])
-		for xdz in range(int(max_zPose)):
-			maxbase_z += self.z_increment
-			self.z.append(maxbase_z)		
-		# print self.z
-
-	def get_y(self):
-		min_yPose = math.ceil(self.y_extremes[0] / self.y_increment)
-		max_yPose = math.ceil(self.y_extremes[1] / self.y_increment)
-		minbase_y = deepcopy(self._basePose[1])
-		for mdy in range(int(min_yPose)):
-			minbase_y -= self.y_increment
-			self.miny.append(minbase_y)
-
-		maxbase_y = deepcopy(self._basePose[1])
-		for xdy in range(int(max_yPose)):
-			maxbase_y += self.y_increment
-			self.maxy.append(maxbase_y)		
-		# print self.miny, self.maxy	
-
-	def get_x(self):
-		min_xPose = math.ceil(self.x_extremes[0] / self.x_increment)
-		max_xPose = math.ceil(self.x_extremes[1] / self.x_increment)
-		minbase_x = deepcopy(self._basePose[0])
-		for mdy in range(int(min_xPose)):
-			minbase_x -= self.x_increment
-			self.minx.append(minbase_x)
-
-		maxbase_x = deepcopy(self._basePose[0])
-		for xdy in range(int(max_xPose)):
-			maxbase_x += self.x_increment
-			self.maxx.append(maxbase_x)
-		# print self.minx, self.maxx	
-
-	def get_r(self):
-		min_rPose = math.ceil(self.r_extremes[0] / self.r_increment)
-		max_rPose = math.ceil(self.r_extremes[1] / self.r_increment)
-		minbase_r = deepcopy(self._basePose[3])
-		for mdy in range(int(min_rPose)):
-			minbase_r -= self.r_increment
-			self.minr.append(minbase_r)
-
-		maxbase_r = deepcopy(self._basePose[3])
-		for xdy in range(int(max_rPose)):
-			maxbase_r += self.r_increment
-			self.maxr.append(maxbase_r)
-		# print self.minr, self.maxr
-
-
-	def get_p(self):
-		min_pPose = math.ceil(self.p_extremes[0] / self.p_increment)
-		max_pPose = math.ceil(self.p_extremes[1] / self.p_increment)
-		minbase_p = deepcopy(self._basePose[4])
-		for mdy in range(int(min_pPose)):
-			minbase_p -= self.p_increment
-			self.minp.append(minbase_p)
-
-		maxbase_p = deepcopy(self._basePose[4])
-		for xdy in range(int(max_pPose)):
-			maxbase_p += self.p_increment
-			self.maxp.append(maxbase_p)
-		# print self.minp, self.maxp
-
-	def get_w(self):
-		min_wPose = math.ceil(self.w_extremes[0] / self.w_increment)
-		max_wPose = math.ceil(self.w_extremes[1] / self.w_increment)
-		minbase_w = deepcopy(self._basePose[5])
-		for mdy in range(int(min_wPose)):
-			minbase_w -= self.w_increment
-			self.minw.append(minbase_w)
-
-		maxbase_w = deepcopy(self._basePose[5])
-		for xdy in range(int(max_wPose)):
-			maxbase_w += self.w_increment
-			self.maxw.append(maxbase_w)
-		# print self.minw, self.maxw
 
 	def sampling_limits(self):
 		self.x_only = []
@@ -326,9 +260,9 @@ class ppBenchmark():
 		self.all_limits = [self.x_only, self.y_only, self.z_only, self.r_only, self.p_only, self.w_only]
 		self.all_all_poses = self.x_only + self.y_only + self.z_only + self.r_only + self.p_only + self.w_only
 
-		print self.maxp
-		print self.r_only
-		# print "here",self.w_actual_limits
+		# print self.maxp
+		# print self.z_only
+		print self.maxw
 
 	# This function is to calculate combinations 
 	# def sampling_all_Poses(self):
@@ -475,10 +409,6 @@ class ppBenchmark():
 
 
 if __name__ == '__main__':
-	# pExt = [0.06, 0.06, 0.0, 0.04, 0.0, 0.06]
-	# oExt = [45, 45, 45, 45, 30, 30]
-	# pInc = [0.02,0.02,0.02]
-	# oInc = [15,15,15]
 
 	base_pose = [0.0,(-0.44-0.0144),0.01,90,0,0]
 
@@ -500,15 +430,9 @@ if __name__ == '__main__':
 	ppB.get_X_limits()
 	ppB.get_Y_limits()
 	ppB.get_Z_limits()
-	ppB.get_z()
-	ppB.get_y()
-	ppB.get_x()
 	ppB.get_R_limits()
 	ppB.get_P_limits()
 	ppB.get_W_limits()
-	ppB.get_r()
-	ppB.get_p()
-	ppB.get_w()
 	ppB.sampling_limits()
 	ppB.save_poses_into_csv("kinova_s_rectblock")
 

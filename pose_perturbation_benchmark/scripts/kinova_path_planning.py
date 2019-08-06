@@ -260,6 +260,7 @@ def find_pose(poses, target_pose, axis):
 		else:
 			return None
 
+# def Grasp(Robot, )
 
 def main():
 	############################### BENCHMARK PIPELINE ######################################
@@ -290,15 +291,9 @@ def main():
 	ppB.get_X_limits()
 	ppB.get_Y_limits()
 	ppB.get_Z_limits()
-	ppB.get_z()
-	ppB.get_y()
-	ppB.get_x()
 	ppB.get_R_limits()
 	ppB.get_P_limits()
 	ppB.get_W_limits()
-	ppB.get_r()
-	ppB.get_p()
-	ppB.get_w()
 	ppB.sampling_limits()
 	ppB.save_poses_into_csv("kg_s_rectblock")
 	limits = ppB.get_actual_limits()
@@ -435,6 +430,76 @@ def main():
 
 			if done_axis_dir == 1:
 				total_axis_count += 1
+
+
+	for i in range(len(ppB.all_all_poses)):
+		if ppB.all_all_poses[i][-1] == "s" or ppB.all_all_poses[i][-1] == "f":
+			pass
+		else:
+			pose = ppB.all_all_poses[i][:]
+			print "current testing limit: ", pose
+			Robot.scene.remove_world_object()
+			rospy.sleep(2)
+
+			# Set to RRT star
+			Robot.planner_type("RRT*")
+
+			# Move to the extreme
+			Robot.move_to_Goal(pose)
+
+			# Move closer to object
+			closer_pose = pose[:]
+			closer_pose[1] -= 0.094
+			Robot.move_to_Goal(closer_pose)
+
+			# Grasp
+			Robot.move_finger("Close")
+
+			# Lift
+			# lift_pose = pose[:]
+			# lift_pose[2] = 0.3 
+			Robot.move_to_Goal(lift_pose)
+
+			# Check if grasp succeeds
+			# Camera code goes in here
+			if main_f() == "yes":
+				# grasp suceed
+				print "grasp success"
+				print "find the next harder / outer pose"
+				pose += ["s"]
+				success_pose_index = find_pose(ppB.all_all_poses, target_pose, chosen_axis)
+				ppB.all_all_poses[success_pose_index] += ["s"]
+				ppB.save_poses_into_csv("kg_s_rectblock")
+			else:
+				# grasp failed
+				print "grasp fails"
+				print "find the next easier / inner pose"
+				pose += ["f"]
+				success_pose_index = find_pose(ppB.all_all_poses, target_pose, chosen_axis) # find pose position in the file
+				ppB.all_all_poses[success_pose_index] += ["f"] # mark middle 
+				ppB.save_poses_into_csv("kg_s_rectblock")
+
+			# Open grasp
+			Robot.move_finger("Open")
+
+			# Reset object
+			ser.write('r')
+			while 1:
+				tdata = ser.read() # Wait forever for anything
+				print tdata 
+				if tdata =='d':
+					print 'yes'
+					break 
+				time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
+				data_left = ser.inWaiting()  # Get the number of characters ready to be read
+				tdata += ser.read(data_left)
+
+			# Move back to home pose 
+			Robot.get_Object([0.13125, 0.13125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube for planning
+			rospy.sleep(2)
+			Robot.planner_type("RRT")
+			Robot.move_to_Goal(initial_pose)	
+
 	################################# END ####################################
 	# Compute all pose variations
 	# ppB.sampling_all_Poses()
