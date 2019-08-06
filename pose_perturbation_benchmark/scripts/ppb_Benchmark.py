@@ -41,9 +41,6 @@ class ppBenchmark():
 		# self._pIncrement = pIncrement # [xinc, yinc, zinc]
 		# self._oIncrement = oIncrement # [rinc, pinc, winc]
 		self._basePose = base_pose # [x, y, z, r, p, w]
-		# self.minz = []
-		# self.maxz = []
-
 
 		self.z = []
 		self.miny = []
