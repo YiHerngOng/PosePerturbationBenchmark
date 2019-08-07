@@ -268,7 +268,7 @@ def find_pose(poses, target_pose, axis):
 def preplan_paths():
 
 	# Set initial pose and base pose
-	initial_pose = [0.03, -0.59, 0.01, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
+	initial_pose = [0.03, -0.59, 0.02, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
 	lift_pose = [-0.24, -0.9325, 0.50, 90, 180, 0] # lifting object
 	# base_pose = [0.03, (-0.54-0.104), 0.01, 90, 180, 0] # make it closer to object
 
@@ -303,9 +303,12 @@ def preplan_paths():
 	Robot.scene.remove_world_object()
 
 
-	for pose in ppB.all_all_poses:
+	for count, pose in enumerate(ppB.all_rot_poses):
+		if count != 0 and pose == initial_pose:
+			continue
 		print "current pose:", pose
 		Robot.planner_type("RRT")
+		rospy.sleep(2)
 		Robot.get_Object([0.13125, 0.13125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube")
 		rospy.sleep(3)
 		Robot.move_to_Goal(initial_pose)
@@ -313,7 +316,7 @@ def preplan_paths():
 		Robot.planner_type("RRT*")
 		rospy.sleep(3)
 		Robot.move_to_Goal(pose)
-		rospy.sleep(5)
+		rospy.sleep(3)
 		closer_pose = pose[:]
 		closer_pose[1] -= 0.054
 		Robot.move_to_Goal(closer_pose)
@@ -329,7 +332,7 @@ def main():
 	ser = serial.Serial('/dev/ttyACM0')
 
 	# Set initial pose and base pose
-	initial_pose = [0.03, -0.54, 0.01, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
+	initial_pose = [0.03, -0.59, 0.02, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
 	lift_pose = [-0.24, -0.8325, 0.50, 90, 180, 0] # lifting object
 	# base_pose = [0.03, (-0.54-0.104), 0.01, 90, 180, 0] # make it closer to object
 
@@ -442,8 +445,8 @@ def main():
 						rospy.sleep(2)
 
 						# Set to RRT star
-						Robot.planner_type("PRM*")
-						rospy.sleep(2)
+						Robot.planner_type("RRT*")
+						rospy.sleep(3)
 
 						# Move to the extreme
 						print "Move to the chosen limit pose"
@@ -452,8 +455,9 @@ def main():
 						# Move closer to object
 						print "Approaching..."
 						closer_pose = pose[:]
-						closer_pose[1] -= 0.104
+						closer_pose[1] -= 0.044
 						print "closer pose", closer_pose
+						rospy.sleep(3)
 						Robot.move_to_Goal(closer_pose)
 
 						# Start recording
@@ -468,28 +472,29 @@ def main():
 						# Robot.planner_type("RRT*")
 						# Lift
 						print "Lifting..."
+						rospy.sleep(3)
 						Robot.move_to_Goal(lift_pose)
 
 						# Check if grasp succeeds
 						# Camera code goes in here
-						# print "Detecting grasp..."
-						# if main_f() == "yes":
-						# 	# grasp suceed
-						# 	print "grasp success"
-						# 	print "find the next harder / outer pose"
-						# 	pose += ["s"]
-						# 	success_pose_index = find_pose(ppB.all_all_poses, pose[0:6], chosen_axis)
-						# 	ppB.all_all_poses[success_pose_index] += ["s"]
-						# 	ppB.save_poses_into_csv("kg_s_rectblock")
-						# else:
-						# 	# grasp failed
-						# 	print "grasp fails"
-						# 	print "find the next easier / inner pose"
-						# 	pose += ["f"]
-						# 	fail_pose_index = find_pose(ppB.all_all_poses, pose[0:6], chosen_axis) # find pose position in the file
-						# 	print 
-						# 	ppB.all_all_poses[fail_pose_index] += ["f"] # mark middle 
-						# 	ppB.save_poses_into_csv("kg_s_rectblock")
+						print "Detecting grasp..."
+						if main_f() == "yes":
+							# grasp suceed
+							print "grasp success"
+							print "find the next harder / outer pose"
+							pose += ["s"]
+							success_pose_index = find_pose(ppB.all_all_poses, pose[0:6], chosen_axis)
+							ppB.all_all_poses[success_pose_index] += ["s"]
+							ppB.save_poses_into_csv("kg_s_rectblock")
+						else:
+							# grasp failed
+							print "grasp fails"
+							print "find the next easier / inner pose"
+							pose += ["f"]
+							fail_pose_index = find_pose(ppB.all_all_poses, pose[0:6], chosen_axis) # find pose position in the file
+							print 
+							ppB.all_all_poses[fail_pose_index] += ["f"] # mark middle 
+							ppB.save_poses_into_csv("kg_s_rectblock")
 
 						# Open grasp
 						print "Open grasp"
@@ -517,6 +522,7 @@ def main():
 						Robot.get_Object([0.13125, 0.13125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube for planning
 						rospy.sleep(2)
 						Robot.planner_type("RRT")
+						rospy.sleep(2)
 						Robot.move_to_Goal(initial_pose)	
 						while_loop_check = False
 						break
@@ -548,7 +554,7 @@ def main():
 
 			# Move closer to object
 			closer_pose = pose[:]
-			closer_pose[1] -= 0.094
+			closer_pose[1] -= 0.044
 			Robot.move_to_Goal(closer_pose)
 
 			# Grasp

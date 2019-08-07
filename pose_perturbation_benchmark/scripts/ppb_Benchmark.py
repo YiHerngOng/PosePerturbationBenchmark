@@ -256,10 +256,11 @@ class ppBenchmark():
 
 		self.all_limits = [self.x_only, self.y_only, self.z_only, self.r_only, self.p_only, self.w_only]
 		self.all_all_poses = self.x_only + self.y_only + self.z_only + self.r_only + self.p_only + self.w_only
-
+		self.all_rot_poses = self.r_only + self.p_only + self.w_only
+		self.all_trans_poses = self.x_only + self.y_only + self.z_only
 		# print self.maxp
 		# print self.z_only
-		print self.maxw
+		# print self.maxw
 
 	# This function is to calculate combinations 
 	# def sampling_all_Poses(self):
@@ -433,3 +434,6 @@ if __name__ == '__main__':
 	ppB.sampling_limits()
 	ppB.save_poses_into_csv("kinova_s_rectblock")
 
+	# for pose in ppB.all_rot_poses:
+	# 	print pose
+	# print len(ppB.all_rot_poses[0])
