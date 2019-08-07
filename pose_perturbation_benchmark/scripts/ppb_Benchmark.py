@@ -150,16 +150,13 @@ class ppBenchmark():
 		return [[self.minx, self.maxx], [self.miny, self.maxy], [self.z], [self.minr, self.maxr], [self.minp, self.maxp], [self.minw, self.maxw]]
 
 	def sampling_rotation(self, ext, inc, axis, poses):
-		if axis == 3 or axis == 4: # pitch
+		if axis == 4: # pitch
 			pose = self._basePose[:]
 			min_numPose = 3
 			new_minposes = []
 			for i in range(min_numPose):
 				pose[axis] -= inc
-				if axis == 3:
-					self.minr.append(pose[axis])
-				if axis == 4:
-					self.minp.append(pose[axis])				
+				self.minp.append(pose[axis])				
 				pose[2] += 0.02
 				temp = pose[:]
 				new_minposes.append(temp)
@@ -168,15 +165,34 @@ class ppBenchmark():
 			new_maxposes = []
 			pose = self._basePose[:]
 			for i in range(max_numPose):
-				pose[axis] += inc
-				if axis == 3:
-					self.maxr.append(pose[axis])	
-				if axis == 4:
-					self.maxp.append(pose[axis])									
+				pose[axis] += inc	
+				self.maxp.append(pose[axis])									
 				pose[2] += 0.02
 				temp = pose[:]
 				new_maxposes.append(temp)
+			return new_minposes + new_maxposes
 
+
+		if axis == 3: 
+			pose = self._basePose[:]
+			min_numPose = 3
+			new_minposes = []
+			for i in range(min_numPose):
+				pose[axis] -= inc
+				self.minr.append(pose[axis])			
+				pose[2] += 0.02
+				temp = pose[:]
+				new_minposes.append(temp)
+
+			max_numPose = 1
+			new_maxposes = []
+			pose = self._basePose[:]
+			for i in range(max_numPose):
+				pose[axis] += inc
+				self.maxr.append(pose[axis])										
+				pose[2] = 0.08
+				temp = pose[:]
+				new_maxposes.append(temp)
 			return new_minposes + new_maxposes
 
 		if axis == 5: 
@@ -186,7 +202,7 @@ class ppBenchmark():
 			for j in range(min_numPose):
 				pose[axis] -= inc
 				self.minw.append(pose[axis])					
-				pose[1] += 0.02
+				pose[1] += 0.01
 				temp = pose[:]
 				new_minposes.append(temp)
 			max_numPose = 2
@@ -195,7 +211,7 @@ class ppBenchmark():
 			for j in range(max_numPose):
 				pose[axis] += inc
 				self.maxw.append(pose[axis])					
-				pose[1] += 0.02
+				pose[1] += 0.01
 				temp = pose[:]
 				new_maxposes.append(temp)			
 			

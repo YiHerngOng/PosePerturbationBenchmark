@@ -28,7 +28,7 @@ from moveit_msgs.srv import GetPlanningScene, ApplyPlanningScene
 from ppb_Benchmark import *
 import serial
 import time
-# from qrtest import main_f
+from qrtestRGB import main_f
 import subprocess
 	
 # base pose : position [0.6972, 0, 0.8] orientation [0, 90, 0]
@@ -329,11 +329,11 @@ def preplan_paths():
 def main():
 	############################### BENCHMARK PIPELINE ######################################
 	# Open reset port
-	ser = serial.Serial('/dev/ttyACM0')
+	ser = serial.Serial('/dev/ttyACM1')
 
 	# Set initial pose and base pose
-	initial_pose = [0.03, -0.59, 0.02, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
-	lift_pose = [-0.24, -0.8325, 0.50, 90, 180, 0] # lifting object
+	initial_pose = [0.03, -0.59, 0.015, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
+	lift_pose = [-0.24, -0.8325, 0.30, 90, 180, 0] # lifting object
 	# base_pose = [0.03, (-0.54-0.104), 0.01, 90, 180, 0] # make it closer to object
 
 	# Get pose extremes and increments based on object size and type
@@ -457,12 +457,13 @@ def main():
 						closer_pose = pose[:]
 						closer_pose[1] -= 0.044
 						print "closer pose", closer_pose
-						rospy.sleep(3)
+						rospy.sleep(5)
 						Robot.move_to_Goal(closer_pose)
+						rospy.sleep(5)
 
 						# Start recording
 						print "Start recording..."
-						# record_data = subprocess.Popen(["rosbag", "record", "--output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_sblock_data.bag", "/camera/color/image_raw", "/j2s7s300_driver/out/joint_state"])
+						record_data = subprocess.Popen(["rosbag", "record", "--output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_sblock_data.bag", "/camera/color/image_raw", "/j2s7s300_driver/out/joint_state"])
 						
 						# Grasp
 						print "Grasping..."
@@ -481,7 +482,7 @@ def main():
 						if main_f() == "yes":
 							# grasp suceed
 							print "grasp success"
-							print "find the next harder / outer pose"
+							# print "find the next harder / outer pose"
 							pose += ["s"]
 							success_pose_index = find_pose(ppB.all_all_poses, pose[0:6], chosen_axis)
 							ppB.all_all_poses[success_pose_index] += ["s"]
@@ -489,10 +490,9 @@ def main():
 						else:
 							# grasp failed
 							print "grasp fails"
-							print "find the next easier / inner pose"
+							# print "find the next easier / inner pose"
 							pose += ["f"]
 							fail_pose_index = find_pose(ppB.all_all_poses, pose[0:6], chosen_axis) # find pose position in the file
-							print 
 							ppB.all_all_poses[fail_pose_index] += ["f"] # mark middle 
 							ppB.save_poses_into_csv("kg_s_rectblock")
 
@@ -502,7 +502,7 @@ def main():
 
 						# Stop record
 						print "Stop recording"
-						# record_data.terminate()
+						record_data.terminate()
 
 						# Reset object
 						print "Resetting object..." 
@@ -542,7 +542,7 @@ def main():
 			pass
 		else:
 			pose = ppB.all_all_poses[i][:]
-			print "current testing limit: ", pose
+			print "current testing pose: ", pose
 			Robot.scene.remove_world_object()
 			rospy.sleep(2)
 
@@ -662,8 +662,8 @@ def main():
 
 
 if __name__ == '__main__':
-	# main()
-	preplan_paths()
+	main()
+	# preplan_paths()
 
 	# Robot = robot('kinova')
 	# Robot.planner_type("RRT")
@@ -676,13 +676,6 @@ if __name__ == '__main__':
 	# # Robot.planner_type("RRT*")
 	# Robot.move_to_Goal([0.07, -0.644, 0.01, 90, 180, 0]) # move close the object
 
-# pick a pose from benchmark
-#
-# 1. Choose a translational axis (x, y, z)
-# 2. Proceed to one extreme and get result 
-# 3. Determine range with binary search
-# 4. Choose 
-#
 
 
 
