@@ -28,7 +28,7 @@ from moveit_msgs.srv import GetPlanningScene, ApplyPlanningScene
 from ppb_Benchmark import *
 import serial
 import time
-from qrtestRGB import main_f
+# from qrtestRGB import main_f
 import subprocess
 	
 # base pose : position [0.6972, 0, 0.8] orientation [0, 90, 0]
@@ -64,6 +64,7 @@ class robot(object):
 			self.traj_pos = []
 			self.traj_vel = []
 			self.traj_time = []
+			self.group.allow_replanning(1)
 			# self.pubPlanningScene = rospy.Publisher("planning_scene" PlanningScene)
 			# rospy.wait_for_service("/get_planning_scene", 10.0)
 			# get_planning_scene = rospy.ServiceProxy('/get_planning_scene', GetPlanningScene)
@@ -133,10 +134,11 @@ class robot(object):
 			pose_goal.orientation.w = ee_pose[6]	
 
 		self.group.set_pose_target(pose_goal)
-		self.plan = self.group.plan()
 		self.group.set_planning_time(20)
+		self.plan = self.group.plan()
+		rospy.sleep(2)
 		self.group.go(wait=True)
-		self.group.execute(self.plan, wait=True)
+		# self.group.execute(self.plan, wait=True)
 		self.group.stop()
 		self.group.clear_pose_targets()
 		rospy.sleep(2)
@@ -268,8 +270,8 @@ def find_pose(poses, target_pose, axis):
 def preplan_paths():
 
 	# Set initial pose and base pose
-	initial_pose = [0.03, -0.59, 0.02, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
-	lift_pose = [-0.24, -0.9325, 0.50, 90, 180, 0] # lifting object
+	initial_pose = [0.03, -0.59, 0.015, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
+	lift_pose = [-0.24, -0.8325, 0.30, 90, 180, 0] # lifting object
 	# base_pose = [0.03, (-0.54-0.104), 0.01, 90, 180, 0] # make it closer to object
 
 	# Get pose extremes and increments based on object size and type
@@ -301,27 +303,44 @@ def preplan_paths():
 
 	Robot = robot('kinova')
 	Robot.scene.remove_world_object()
+	# Robot.get_Object([0.13125, 0.13125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube")
+	# Robot.move_to_Goal(initial_pose)
+	# Robot.planner_type("RRT")
 
 
-	for count, pose in enumerate(ppB.all_rot_poses):
+	start = time.time()
+	for count, pose in enumerate(ppB.all_all_poses):
 		if count != 0 and pose == initial_pose:
 			continue
-		print "current pose:", pose
+		print "current count:", count, "current count:", pose
+		# rospy.sleep(2)
 		Robot.planner_type("RRT")
-		rospy.sleep(2)
-		Robot.get_Object([0.13125, 0.13125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube")
+		Robot.get_Object([0.13125, 0.10125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube")
 		rospy.sleep(3)
+		print "Go to home pose"
 		Robot.move_to_Goal(initial_pose)
 		Robot.scene.remove_world_object()
 		Robot.planner_type("RRT*")
 		rospy.sleep(3)
+		print "Go to current pose..."
 		Robot.move_to_Goal(pose)
 		rospy.sleep(3)
 		closer_pose = pose[:]
 		closer_pose[1] -= 0.054
+		print "Approaching..."
 		Robot.move_to_Goal(closer_pose)
-		rospy.sleep(2)
+		rospy.sleep(3)
+		print "Close finger..."
+		Robot.move_finger("Close")
+		rospy.sleep(3)
+		print "Lifting..."
+		Robot.move_to_Goal(lift_pose)
+		rospy.sleep(3)
+		print "Open finger..."
+		Robot.move_finger("Open")
+		rospy.sleep(3)
 
+	print "total time used: ", time.time() - start
 	# Robot.planner_type("RRT*")
 	# Robot.move_to_Goal([0.07, -0.644, 0.01, 90, 180, 0]) # move close the object
 
@@ -662,8 +681,8 @@ def main():
 
 
 if __name__ == '__main__':
-	main()
-	# preplan_paths()
+	# main()
+	preplan_paths()
 
 	# Robot = robot('kinova')
 	# Robot.planner_type("RRT")

@@ -158,6 +158,7 @@ class ppBenchmark():
 				pose[axis] -= inc
 				self.minp.append(pose[axis])				
 				pose[2] += 0.02
+				pose[1] = self._basePose[1] - 0.01 
 				temp = pose[:]
 				new_minposes.append(temp)
 
@@ -168,6 +169,7 @@ class ppBenchmark():
 				pose[axis] += inc	
 				self.maxp.append(pose[axis])									
 				pose[2] += 0.02
+				pose[1] = self._basePose[1] - 0.01 
 				temp = pose[:]
 				new_maxposes.append(temp)
 			return new_minposes + new_maxposes
@@ -181,6 +183,7 @@ class ppBenchmark():
 				pose[axis] -= inc
 				self.minr.append(pose[axis])			
 				pose[2] += 0.02
+				pose[1] = self._basePose[1] - 0.01 
 				temp = pose[:]
 				new_minposes.append(temp)
 
@@ -191,6 +194,7 @@ class ppBenchmark():
 				pose[axis] += inc
 				self.maxr.append(pose[axis])										
 				pose[2] = 0.08
+				pose[1] = self._basePose[1] - 0.01 				
 				temp = pose[:]
 				new_maxposes.append(temp)
 			return new_minposes + new_maxposes
