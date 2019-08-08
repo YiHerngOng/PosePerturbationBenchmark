@@ -116,6 +116,7 @@ class robot(object):
 		# if ee_pose == "home":
 		# 	pose_goal == ee_pose
 		# else:
+		self.group.allow_replanning(1)
 		pose_goal = geometry_msgs.msg.Pose()
 		pose_goal.position.x = ee_pose[0]
 		pose_goal.position.y = ee_pose[1]
@@ -242,22 +243,21 @@ def get_random_translation():
 
 
 def readfile(filename):
-	import csv
-	pose = []
 	all_Poses = []
-	with open(filename) as csvfile:
+	with open(filename + ".csv") as csvfile:
 		csv_reader = csv.reader(csvfile, delimiter=',')
 		for row in csv_reader:
-			temp = row
+			temp = row[:]
+			pose = []
 			for each in temp:
 				try:
 					pose.append(float(each))
 				except:
-					raise ValueError
-					pass
-			all_Poses.append(pose)	
-
-	return all_Poses # make sure all poses are float 
+					pose.append(each)
+					# pass
+			all_Poses.append(pose)
+	# print len(all_Poses)	
+	return all_Poses
 
 def find_pose(poses, target_pose, axis):
 	print "Find target_pose index...", target_pose
@@ -389,7 +389,7 @@ def main():
 	# Set planner type
 	Robot.planner_type("RRT")
 	Robot.get_Object([0.13125, 0.13125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube
-	rospy.sleep(2)
+	rospy.sleep(3)
 
 	# Move to home pose of the benchmark
 	print "Pose variation computed, Robot is moving to initial pose..."
@@ -461,7 +461,7 @@ def main():
 					else:
 						print "Pose found has not been tested. Running..."
 						Robot.scene.remove_world_object()
-						rospy.sleep(2)
+						rospy.sleep(3)
 
 						# Set to RRT star
 						Robot.planner_type("RRT*")
@@ -476,9 +476,9 @@ def main():
 						closer_pose = pose[:]
 						closer_pose[1] -= 0.044
 						print "closer pose", closer_pose
-						rospy.sleep(5)
+						rospy.sleep(3)
 						Robot.move_to_Goal(closer_pose)
-						rospy.sleep(5)
+						rospy.sleep(3)
 
 						# Start recording
 						print "Start recording..."
@@ -516,6 +516,7 @@ def main():
 							ppB.save_poses_into_csv("kg_s_rectblock")
 
 						# Open grasp
+						rospy.sleep(3)
 						print "Open grasp"
 						Robot.move_finger("Open")
 
@@ -539,10 +540,11 @@ def main():
 						# Move back to home pose 
 						print "Done resetting, move to home pose..."
 						Robot.get_Object([0.13125, 0.13125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube for planning
-						rospy.sleep(2)
+						rospy.sleep(3)
 						Robot.planner_type("RRT")
-						rospy.sleep(2)
-						Robot.move_to_Goal(initial_pose)	
+						rospy.sleep(3)
+						Robot.move_to_Goal(initial_pose)
+						rospy.sleep(3)	
 						while_loop_check = False
 						break
 

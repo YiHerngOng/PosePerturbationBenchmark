@@ -20,6 +20,7 @@ import serial
 from object_size import *
 from geometry_msgs.msg import PoseStamped
 from object_size import *
+import csv
 '''
 Pose perturbation benchmark:
 1. Select object 
@@ -414,7 +415,7 @@ class ppBenchmark():
 			self.markers_pub.publish(arrow)
 
 	def save_poses_into_csv(self, filename):
-		f =  filename + ".csv"
+		f = filename + ".csv"
 		csv = open(f, "wb")
 		for i in range(len(self.all_all_poses)):
 			temp = self.all_all_poses[i]
@@ -424,7 +425,22 @@ class ppBenchmark():
 			csv.write("\n")
 		csv.close()	
 
-
+	def readfile(self, filename):
+		all_Poses = []
+		with open(filename + ".csv") as csvfile:
+			csv_reader = csv.reader(csvfile, delimiter=',')
+			for row in csv_reader:
+				temp = row[:]
+				pose = []
+				for each in temp:
+					try:
+						pose.append(float(each))
+					except:
+						pose.append(each)
+						# pass
+				all_Poses.append(pose)
+		print len(all_Poses)	
+		return all_Poses
 
 if __name__ == '__main__':
 
@@ -453,7 +469,7 @@ if __name__ == '__main__':
 	ppB.get_W_limits()
 	ppB.sampling_limits()
 	ppB.save_poses_into_csv("kinova_s_rectblock")
-
-	# for pose in ppB.all_rot_poses:
-	# 	print pose
+	all_Poses = ppB.readfile("kinova_s_rectblock")
+	for pose in all_Poses:
+		print pose[0:6]
 	# print len(ppB.all_rot_poses[0])
