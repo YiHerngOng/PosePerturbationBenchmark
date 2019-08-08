@@ -20,7 +20,6 @@ import serial
 from object_size import *
 from geometry_msgs.msg import PoseStamped
 from object_size import *
-import csv
 '''
 Pose perturbation benchmark:
 1. Select object 
@@ -72,7 +71,6 @@ class ppBenchmark():
 
 	def get_X_limits(self):
 		x_limit = math.floor((self.hand_width - self.obj_width) / 2 * 100)
-		# print x_limit
 		self.x_extremes = [x_limit / 100, x_limit / 100]
 		self.x_increment = self.trans_inc
 		self.x_actual_limits = [self._basePose[0] - self.x_extremes[0], self._basePose[0] + self.x_extremes[1]]
@@ -83,22 +81,17 @@ class ppBenchmark():
 		y_backward_limit = math.floor(self.obj_width / 2 * 100)
 		y_forward_limit = math.floor((self.hand_depth - self.obj_depth /2)*100) 
 		self.y_extremes = [self.y_increment * math.floor(y_forward_limit / (self.y_increment * 100)) , self.y_increment * math.floor(y_backward_limit / (self.y_increment * 100)) ]
-		# self.y_extremes[0] 
-		# print self.y_increment * math.floor(y_backward_limit / (self.y_increment * 100))
-		# print self.y_extremes[1]
 		self.y_actual_limits = [self._basePose[1] - self.y_extremes[0], self._basePose[1] + self.y_extremes[1]]
-		# print self.y_actual_limits
-		# return self.y_extremes, self.y_increment
+
 
 	# Note: We only look at the location of palm center
 	def get_Z_limits(self):
 		# palm_center_loc = ((self.hand_height / 2 ) + self.table_to_hand_distance)
-		# print self.table_to_hand_distance, self.obj_height
 		if self.table_to_hand_distance < self.obj_height:
-			# print "here"
+
 			z_limit = math.floor((self.obj_height - self.table_to_hand_distance)*100)
 			self.z_extremes = [0.0, z_limit / 100]
-			# print z_limit
+
 		else:
 			self.z_extremes = [0.0, 0.0]
 		
@@ -110,7 +103,7 @@ class ppBenchmark():
 	def get_R_limits(self):
 		# based on reachable z 
 		# length = len(self.z)
-		# print self.z
+
 		# if len(self.z) > 1:
 		# 	# print "here"
 		# 	self.r_extremes = [15*(len(self.z)), 15*(len(self.z))]
@@ -133,7 +126,6 @@ class ppBenchmark():
 		self.p_extremes = [45, 45]
 		self.p_actual_limits = [self._basePose[4] - self.p_extremes[0], self._basePose[4] + self.p_extremes[1]]
 
-		# print self.p_extremes, self.p_actual_limits
 		# return self.p_extremes, self.p_increment
 
 	def get_W_limits(self):
@@ -152,7 +144,7 @@ class ppBenchmark():
 
 	def sampling_rotation(self, ext, inc, axis, poses):
 		if axis == 4: # pitch
-			pose = self._basePose[:]
+			pose = self._basePose[:] + [0] 
 			min_numPose = 3
 			new_minposes = []
 			for i in range(min_numPose):
@@ -160,24 +152,24 @@ class ppBenchmark():
 				self.minp.append(pose[axis])				
 				pose[2] += 0.02
 				pose[1] = self._basePose[1] - 0.01 
-				temp = pose[:]
+				temp = pose[:] 
 				new_minposes.append(temp)
 
 			max_numPose = 3
 			new_maxposes = []
-			pose = self._basePose[:]
+			pose = self._basePose[:] + [0]
 			for i in range(max_numPose):
 				pose[axis] += inc	
 				self.maxp.append(pose[axis])									
 				pose[2] += 0.02
 				pose[1] = self._basePose[1] - 0.01 
-				temp = pose[:]
+				temp = pose[:] 
 				new_maxposes.append(temp)
 			return new_minposes + new_maxposes
 
 
 		if axis == 3: 
-			pose = self._basePose[:]
+			pose = self._basePose[:] + [0]
 			min_numPose = 3
 			new_minposes = []
 			for i in range(min_numPose):
@@ -190,34 +182,34 @@ class ppBenchmark():
 
 			max_numPose = 1
 			new_maxposes = []
-			pose = self._basePose[:]
+			pose = self._basePose[:] + [0]
 			for i in range(max_numPose):
 				pose[axis] += inc
 				self.maxr.append(pose[axis])										
 				pose[2] = 0.08
 				pose[1] = self._basePose[1] - 0.01 				
-				temp = pose[:]
+				temp = pose[:] 
 				new_maxposes.append(temp)
 			return new_minposes + new_maxposes
 
 		if axis == 5: 
 			min_numPose = 2
-			pose = self._basePose[:]
+			pose = self._basePose[:] + [0]
 			new_minposes = []
 			for j in range(min_numPose):
 				pose[axis] -= inc
 				self.minw.append(pose[axis])					
-				pose[1] += 0.01
-				temp = pose[:]
+				# pose[1] += 0.01
+				temp = pose[:] 
 				new_minposes.append(temp)
 			max_numPose = 2
-			pose = self._basePose[:]
+			pose = self._basePose[:] + [0]
 			new_maxposes = []				
 			for j in range(max_numPose):
 				pose[axis] += inc
 				self.maxw.append(pose[axis])					
-				pose[1] += 0.01
-				temp = pose[:]
+				# pose[1] += 0.01
+				temp = pose[:] 
 				new_maxposes.append(temp)			
 			
 			return new_minposes + new_maxposes
@@ -226,7 +218,7 @@ class ppBenchmark():
 	def samplingPoses(self, ext, inc, axis, poses):
 		# min_numPose = ext[0] / inc
 		if len(poses) == 0:
-			poses.append(self._basePose[:])
+			poses.append(self._basePose[:] + [0])
 		min_poses = deepcopy(poses)
 		max_poses = deepcopy(poses)
 
@@ -240,8 +232,9 @@ class ppBenchmark():
 					self.minx.append(pose[axis])
 				elif axis == 1:
 					self.miny.append(pose[axis])
-				temp = pose[:]
+				temp = pose[:] 
 				poses.append(temp)
+
 
 
 		# max_numPose = ext[1] / inc
@@ -255,7 +248,7 @@ class ppBenchmark():
 					self.maxy.append(pose[axis])
 				elif axis == 2:
 					self.z.append(pose[axis])					
-				temp = pose[:]		
+				temp = pose[:] 
 				poses.append(temp)
 
 		return poses
@@ -269,19 +262,22 @@ class ppBenchmark():
 		self.w_only = []
 
 		self.x_only = self.samplingPoses((self.x_extremes[0], self.x_extremes[1]), self.x_increment, 0, self.x_only) # left-right
+		# self.x_only.append(0)
 		self.y_only = self.samplingPoses((self.y_extremes[0], self.y_extremes[1]), self.y_increment, 1, self.y_only) # close-far
+		# self.y_only.append(0)
 		self.z_only = self.samplingPoses((self.z_extremes[0], self.z_extremes[1]), self.z_increment, 2, self.z_only) # up-down
-		self.r_only = self.sampling_rotation((self.r_extremes[0], self.r_extremes[1]), self.r_increment, 3, self.r_only) # rotate about x
-		self.p_only = self.sampling_rotation((self.p_extremes[0], self.p_extremes[1]), self.p_increment, 4, self.p_only) # rotate about y
-		self.w_only = self.sampling_rotation((self.w_extremes[0], self.w_extremes[1]), self.w_increment, 5, self.w_only) # rotate about z
+		# self.z_only.append(0)
+		self.r_only = self.sampling_rotation((self.r_extremes[0], self.r_extremes[1]), self.r_increment, 3, self.r_only)  # rotate about x
+		# self.r_only.append(0)
+		self.p_only = self.sampling_rotation((self.p_extremes[0], self.p_extremes[1]), self.p_increment, 4, self.p_only)  # rotate about y
+		# self.p_only.append(0)
+		self.w_only = self.sampling_rotation((self.w_extremes[0], self.w_extremes[1]), self.w_increment, 5, self.w_only)  # rotate about z
+		# self.w_only.append(0)
 
 		self.all_limits = [self.x_only, self.y_only, self.z_only, self.r_only, self.p_only, self.w_only]
 		self.all_all_poses = self.x_only + self.y_only + self.z_only + self.r_only + self.p_only + self.w_only
 		self.all_rot_poses = self.r_only + self.p_only + self.w_only
 		self.all_trans_poses = self.x_only + self.y_only + self.z_only
-		# print self.maxp
-		# print self.z_only
-		# print self.maxw
 
 	# This function is to calculate combinations 
 	# def sampling_all_Poses(self):
@@ -414,39 +410,25 @@ class ppBenchmark():
 		while not rospy.is_shutdown():
 			self.markers_pub.publish(arrow)
 
-	def save_poses_into_csv(self, filename):
-		f = filename + ".csv"
+	def save_poses_into_csv(self, filename, poses):
+		f =  filename + ".csv"
 		csv = open(f, "wb")
-		for i in range(len(self.all_all_poses)):
-			temp = self.all_all_poses[i]
+
+		for i in range(len(poses)):
+			temp = poses[i]
 			for j in range(len(temp)):
 				csv.write(str(temp[j]))
 				csv.write(",")
 			csv.write("\n")
 		csv.close()	
 
-	def readfile(self, filename):
-		all_Poses = []
-		with open(filename + ".csv") as csvfile:
-			csv_reader = csv.reader(csvfile, delimiter=',')
-			for row in csv_reader:
-				temp = row[:]
-				pose = []
-				for each in temp:
-					try:
-						pose.append(float(each))
-					except:
-						pose.append(each)
-						# pass
-				all_Poses.append(pose)
-		print len(all_Poses)	
-		return all_Poses
+
 
 if __name__ == '__main__':
 
 	base_pose = [0.0,(-0.44-0.0144),0.01,90,0,0]
 
-	initial_pose = [0.0,(-0.44),0.01,90,0,0]
+	initial_pose = [0.03, -0.58, 0.015, 90, 180, 0]
 	hand_width = 0.175
 	hand_height = 0.08
 	hand_depth = 0.08
@@ -468,8 +450,9 @@ if __name__ == '__main__':
 	ppB.get_P_limits()
 	ppB.get_W_limits()
 	ppB.sampling_limits()
-	ppB.save_poses_into_csv("kinova_s_rectblock")
-	all_Poses = ppB.readfile("kinova_s_rectblock")
-	for pose in all_Poses:
-		print pose[0:6]
+	ppB.save_poses_into_csv("kinova_s_rectblock", ppB.all_all_poses)
+	# ranges = ppB.get_actual_ranges()
+	# print ranges
+	# for pose in ppB.all_rot_poses:
+	# 	print pose
 	# print len(ppB.all_rot_poses[0])
