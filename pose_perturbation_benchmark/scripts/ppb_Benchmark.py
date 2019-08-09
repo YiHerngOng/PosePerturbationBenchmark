@@ -426,9 +426,10 @@ class ppBenchmark():
 
 if __name__ == '__main__':
 
-	base_pose = [0.0,(-0.44-0.0144),0.01,90,0,0]
+	# base_pose = [0.0,(-0.44-0.0144),0.01,90,0,0]
+	# initial_pose = [0.03, -0.58, 0.015, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
 
-	initial_pose = [0.03, -0.58, 0.015, 90, 180, 0]
+	initial_pose = [0.02, -0.58, 0.015, 90, 180, 0]
 	hand_width = 0.175
 	hand_height = 0.08
 	hand_depth = 0.08
@@ -450,7 +451,7 @@ if __name__ == '__main__':
 	ppB.get_P_limits()
 	ppB.get_W_limits()
 	ppB.sampling_limits()
-	ppB.save_poses_into_csv("kinova_s_rectblock", ppB.all_all_poses)
+	ppB.save_poses_into_csv("kg_s_cyl_1", ppB.all_all_poses)
 	# ranges = ppB.get_actual_ranges()
 	# print ranges
 	# for pose in ppB.all_rot_poses:

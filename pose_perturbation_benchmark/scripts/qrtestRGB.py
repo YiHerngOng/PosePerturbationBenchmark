@@ -41,7 +41,9 @@ def display(im, decodedObjects):
   # Display results 
   cv2.imshow("Results", im);
   cv2.waitKey(0);
- 
+
+def submatrix( matrix, startRow, startCol, endRow, endC):
+  return matrix[startRow:endRow,startCol:endC]
 
 def main_f():
   cam = cv2.VideoCapture(0)
@@ -101,15 +103,23 @@ def main_f():
 
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-    # lower_range = np.array([110,50,50]) # original
-    # upper_range = np.array([130,255,255])
-    lower_range = np.array([110,150,100]) 
-    upper_range = np.array([130,250,255])
+    # lower_range = np.array([110,60,0]) # original
+    # upper_range = np.array([150,90,10])
+    lower_range = np.array([101,150,100]) 
+    upper_range = np.array([130,255,255])
+
+#     lower_blue = np.array([101,50,38])
+# upper_blue = np.array([110,255,255])
+
+
+    # lower_range = np.array([110,150,100]) 
+    # upper_range = np.array([130,250,255])
 
     mask = cv2.inRange(hsv, lower_range, upper_range)
-    #print(np.sum(mask))
+    x = submatrix(mask, 46,251,312,624)
+    print(np.sum(mask))
     
-    if np.sum(mask) > 50000:
+    if np.sum(mask) > 30000:
       print('yes')
       yes += 1
     else:
@@ -118,21 +128,22 @@ def main_f():
   
   
   suc_rate = yes/(im_number-1) * 100
-  if suc_rate > 80:
+  if suc_rate > 20:
     return('yes')
-  #print(suc_rate)
+    #pass
+  print(suc_rate)
 
 
 
-    # cv2.imshow('image', img)
-    # cv2.imshow('mask', mask)
+  # cv2.imshow('image', img)
+  # cv2.imshow('mask', mask) # x was mask
 
-    # while(True):
-    #    k = cv2.waitKey(5) & 0xFF
-    #    if k == 27:
-    #       break
+  # while(True):
+  #    k = cv2.waitKey(5) & 0xFF
+  #    if k == 27:
+  #       break
 
-cv2.destroyAllWindows() 
+#cv2.destroyAllWindows() 
 
    
 # Main 

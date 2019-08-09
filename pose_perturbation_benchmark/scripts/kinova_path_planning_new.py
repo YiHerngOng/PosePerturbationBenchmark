@@ -253,8 +253,7 @@ def readfile(filename):
 				try:
 					pose.append(float(each))
 				except:
-					pose.append(each)
-					# pass
+					pass
 			all_Poses.append(pose)	
 
 	return all_Poses # make sure all poses are float 
@@ -274,9 +273,10 @@ def find_pose(poses, target_pose):
 	return index
 			
 def benchmark_feature_2():
+	ser = serial.Serial('/dev/ttyACM2')
 
 	# Set initial pose and base pose
-	initial_pose = [0.03, -0.58, 0.015, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
+	initial_pose = [0.02, -0.58, 0.015, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
 	lift_pose = [-0.24, -0.8325, 0.30, 90, 180, 0] # lifting object
 	# base_pose = [0.03, (-0.54-0.104), 0.01, 90, 180, 0] # make it closer to object
 
@@ -303,119 +303,139 @@ def benchmark_feature_2():
 	ppB.get_P_limits()
 	ppB.get_W_limits()
 	ppB.sampling_limits()
-	ppB.save_poses_into_csv("kg_s_rectblock_feature_2")
+	# ppB.save_poses_into_csv("kg_s_cyl", ppB.all_all_poses)
 	limits = ppB.get_actual_limits()
 	ranges = ppB.get_actual_ranges()
 
 	Robot = robot('kinova')
 	Robot.scene.remove_world_object()
-	# Robot.get_Object([0.13125, 0.13125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube")
-	# Robot.move_to_Goal(initial_pose)
-	# Robot.planner_type("RRT")
+	# Set planner type
+	Robot.planner_type("RRT")
+	Robot.get_Object([0.13125, 0.10125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube
+	Robot.get_Object([0.02, 0.49, 0.50], [-0.38, -0.49, (-0.05 + 0.25 + 0.01), 1.0], "wall") # wall
+	rospy.sleep(2)
+	Robot.move_to_Goal(initial_pose)
 
-	read_poses = readfile("kg_s_rectblock.csv")
 
 	start = time.time()
 	print "RUNNING BENCHMARK FEATURE 2, NOW TEST THE UNDONE POSES FROM BEGINNING..."
-	read_poses = readfile("kg_s_rectblock_feature_2.csv") # read latest updated file
+	# read_poses = readfile("kg_s_rectblock_2.csv") # read latest updated file
+	while True:
+		read_poses = readfile("kg_s_cyl_1.csv")
 
-	for i in range(len(read_poses)):
-		if read_poses[i][-1] == 0: # undone pose
-			pose = read_poses[i][:]
-			print "current testing pose: ", pose
-			rospy.sleep(3)
-			Robot.scene.remove_world_object()
-			rospy.sleep(3)
+		for i in range(len(read_poses)):
+			# if read_poses[i][-1] == 0: # undone pose
+			if i == 12: # undone pose
+				pose = read_poses[i][0:6]
+				print "current testing pose: ", pose
+				rospy.sleep(3)
+				Robot.scene.remove_world_object()
+				rospy.sleep(3)
 
-			# # Set to RRT star
-			Robot.planner_type("RRT*")
-			rospy.sleep(3)
+				# # Set to RRT star
+				Robot.planner_type("RRT*")
+				rospy.sleep(3)
 
-			# Move to the extreme
-			Robot.move_to_Goal(pose)
-			rospy.sleep(3)
+				# Move to the extreme
+				Robot.move_to_Goal(pose)
+				rospy.sleep(3)
 
-			# Move closer to object
-			closer_pose = pose[:]
-			closer_pose[1] -= 0.054
-			Robot.move_to_Goal(closer_pose)
-			rospy.sleep(3)
+				# Move closer to object
+				closer_pose = pose[:]
+				closer_pose[1] -= 0.054
+				Robot.move_to_Goal(closer_pose)
+				rospy.sleep(3)
 
-			print "Start recording"
-			pose_index = find_pose(read_poses, pose)
-			print "Pose index: ", pose_index
-			if pose_index != i:
-				raise ValueError
-			cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_sblock_p{}.bag /camera/color/image_raw /j2s7s300_driver/out/joint_state __name:=alpha &".format(chosen_axis,chosen_dir, target_pose)
-			record = os.system(cmd)
-			rospy.sleep(3)
+				print "Start recording"
+				pose_index = find_pose(read_poses, pose)
+				print "Pose index: ", pose_index
+				if pose_index != i:
+					raise ValueError
 
-			# Grasp
-			Robot.move_finger("Close")
-			rospy.sleep(3)
-
-			# Lift
-			# lift_pose = pose[:]
-			# lift_pose[2] = 0.3 
-			Robot.move_to_Goal(lift_pose)
-			rospy.sleep(3)
-
-			# Check if grasp succeeds
-			# Camera code goes in here
-			print "Detecting grasp..."
-			if main_f() == "yes":
-				# grasp suceed
-				print "grasp success"
-				# print "find the next harder / outer pose"
-				# pose += ["s"]
-				success_pose_index = find_pose(read_poses, pose)
-				if success_pose_index == None:
-					raise ValueError 
-				print "success_pose_index found: ", success_pose_index
-				read_poses[success_pose_index][-1] = 1
-				ppB.save_poses_into_csv("kg_s_rectblock_feature_2", read_poses)
-			else:
-				# grasp failed
-				print "grasp fails"
-				# print "find the next easier / inner pose"
-				# pose += ["f"]
-				fail_pose_index = find_pose(read_poses, pose) # find pose position in the file
-				if fail_pose_index == None:
-					raise ValueError 
-				print "fail_pose_index found: ", fail_pose_index
-				read_poses[fail_pose_index][-1] = -1 # mark middle 
-				ppB.save_poses_into_csv("kg_s_rectblock_feature_2", read_poses)
+				cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_small_cylinder/kg_scyl_p{}_camera.bag /camera/color/image_raw __name:=alpha_camera &".format(pose_index)
+				record = os.system(cmd)
+				cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_small_cylinder/kg_scyl_p{}_joints.bag /j2s7s300_driver/out/joint_state __name:=alpha_joints &".format(pose_index)
+				record = os.system(cmd)
 
 
-			# Open grasp
-			Robot.move_finger("Open")
-			rospy.sleep(3)
+				# Grasp
+				Robot.move_finger("Close")
+				rospy.sleep(5)
 
-			# Stop record
-			print "Stop recording"
-			# record_data.terminate()
-			kill_node = os.system("rosnode kill /alpha")
+				# Stop record
+				print "Stop recording"
+				# record_data.terminate()
+				kill_node = os.system("rosnode kill /alpha_camera")
+				kill_node = os.system("rosnode kill /alpha_joints")
 
-			# Reset object
-			# ser.write('r')
-			# while 1:
-			# 	tdata = ser.read() # Wait forever for anything
-			# 	print tdata 
-			# 	if tdata =='d':
-			# 		print 'yes'
-			# 		break 
-			# 	time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
-			# 	data_left = ser.inWaiting()  # Get the number of characters ready to be read
-			# 	tdata += ser.read(data_left)
+				# Lift
+				# lift_pose = pose[:]
+				# lift_pose[2] = 0.3 
+				Robot.move_to_Goal(lift_pose)
+				rospy.sleep(3)
 
-			# Move back to home pose 
-			Robot.get_Object([0.13125, 0.13125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube for planning
-			Robot.get_Object([0.02, 0.49, 0.50], [-0.38, -0.49, (-0.05 + 0.25 + 0.01), 1.0], "wall") # wall
-			rospy.sleep(3)
-			Robot.planner_type("RRT")
-			rospy.sleep(3)
-			Robot.move_to_Goal(initial_pose)	
+				# Check if grasp succeeds
+				# Camera code goes in here
+				print "Detecting grasp..."
+				if main_f() == "yes":
+					# grasp suceed
+					print "grasp success"
+					# print "find the next harder / outer pose"
+					# pose += ["s"]
+					success_pose_index = find_pose(read_poses, pose)
+					if success_pose_index == None:
+						raise ValueError 
+					print "success_pose_index found: ", success_pose_index
+					read_poses[success_pose_index][-1] = 1
+					ppB.save_poses_into_csv("kg_s_cyl_1", read_poses)
+				else:
+					# grasp failed
+					print "grasp fails"
+					# print "find the next easier / inner pose"
+					# pose += ["f"]
+					fail_pose_index = find_pose(read_poses, pose) # find pose position in the file
+					if fail_pose_index == None:
+						raise ValueError 
+					print "fail_pose_index found: ", fail_pose_index
+					read_poses[fail_pose_index][-1] = -1 # mark middle 
+					ppB.save_poses_into_csv("kg_s_cyl_1", read_poses)
 
+
+				# Open grasp
+				Robot.move_finger("Open")
+				rospy.sleep(3)
+
+
+				# Reset object
+				print "Resetting object..."
+				# ser.write('r')
+
+				rospy.sleep(3)
+				print "Move back to home pose"
+				# Move back to home pose 
+				Robot.get_Object([0.13125, 0.10125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube
+				Robot.get_Object([0.02, 0.49, 0.50], [-0.38, -0.49, (-0.05 + 0.25 + 0.01), 1.0], "wall") # wall
+				rospy.sleep(3)
+				Robot.planner_type("RRT")
+				rospy.sleep(3)
+				Robot.move_to_Goal(initial_pose)	
+
+				# reset ping 
+				# ser.write('p')
+				# while 1:
+				# 	tdata = ser.read() # Wait forever for anything
+				# 	print tdata 
+				# 	if tdata =='d':
+				# 		print 'yes'
+				# 		break 
+				# 	time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
+				# 	data_left = ser.inWaiting()  # Get the number of characters ready to be read
+				# 	tdata += ser.read(data_left)
+
+				break
+		if i == len(read_poses) -1:
+			print "Done"
+			break	
 	print "total time used: ", time.time() - start
 	# Robot.planner_type("RRT*")
 	# Robot.move_to_Goal([0.07, -0.644, 0.01, 90, 180, 0]) # move close the object
@@ -424,23 +444,41 @@ def check_pose_f_or_s(poses, target_pose):
 	n_poses = np.array(poses)
 	tar_pose = np.array(target_pose) 
 	f_or_s = None	
+	index = None
 	for pose in n_poses:
-		# print len(tar_pose), len(pose[0:6])
+		# print tar_pose, pose[0:6]
 		if np.max(abs(tar_pose[0:6] - pose[0:6])) < 0.00001:
 			# print pose
-			f_or_s = pose[-1] # it needs to be a string
+			f_or_s = pose[-1] 
 			# print "Read from doc: ", f_or_s 
 			return f_or_s
 	return f_or_s
+
+def find_range_index(ranges, pose):
+	index = None
+	for r in ranges:
+		if abs(r - pose) < 0.00001:
+			index = ranges.index(r) 
+			return index
+
+	return index
+
+def find_target_index(read_poses, target_pose, chosen_axis):
+	index = None
+	for pose in read_poses:
+		if abs(pose[chosen_axis] - target_pose) < 0.00001:
+			index = read_poses.index(pose)
+			return index
+	return index
 
 
 def main():
 	############################### BENCHMARK PIPELINE ######################################
 	# Open reset port
-	# ser = serial.Serial('/dev/ttyACM2')
+	ser = serial.Serial('/dev/ttyACM2')
 
 	# Set initial pose and base pose
-	initial_pose = [0.03, -0.58, 0.015, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
+	initial_pose = [0.02, -0.58, 0.015, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
 	lift_pose = [-0.24, -0.8325, 0.30, 90, 180, 0] # lifting object
 	# base_pose = [0.03, (-0.54-0.104), 0.01, 90, 180, 0] # make it closer to object
 
@@ -467,7 +505,7 @@ def main():
 	ppB.get_P_limits()
 	ppB.get_W_limits()
 	ppB.sampling_limits()
-	ppB.save_poses_into_csv("kg_s_rectblock_2", ppB.all_all_poses)
+	# ppB.save_poses_into_csv("kg_s_cyl", ppB.all_all_poses)
 	limits = ppB.get_actual_limits()
 	ranges = ppB.get_actual_ranges()
 
@@ -489,9 +527,6 @@ def main():
 	record_done_axis = []
 
 	while True:
-	# check if all axis limits are computed
-		read_poses = readfile("kg_s_rectblock_2.csv")
-
 		if total_axis_count == 11:
 			print "All axis limits are computed, DONE..."
 			break
@@ -520,20 +555,51 @@ def main():
 		target_pose = middle_pose
 
 		while while_loop_check:
+			# check if all axis limits are computed
+			read_poses = readfile("kg_s_cyl_1.csv")
+
 			for pose_count, pose in enumerate(chosen_axis_poses,1):
 				if abs(pose[chosen_axis] - target_pose) < 0.00001:
 					# Check if done
 					print "Target pose", target_pose, pose[chosen_axis]
 					print "Current chosen limit: ", pose[chosen_axis], pose
-					print "Pose match, looking for fail or success:", pose[-1] if pose[-1] == 1 or pose[-1] == -1 else "NOT DONE"
+					# print "Pose match, looking for fail or success:", pose[-1] if (pose[-1] == 1) or (pose[-1] == -1) else "NOT DONE"
+
 					if check_pose_f_or_s(read_poses, pose) == -1: # fail grasp means inner pose will succeed
 						print "Pose found was failed, looking for next inner pose"
-						try:
-							target_pose = ranges[ranges.index(target_pose) - 1]
-							while_loop_check = True
-							print "next pose found"
-							break							
-						except:
+						range_index = find_range_index(ranges[chosen_axis][chosen_dir], target_pose)
+						if range_index == None:
+							print "range index"
+							raise ValueError
+
+						if (range_index + 1) != len(ranges[chosen_axis][chosen_dir]):
+							r_f = ranges[chosen_axis][chosen_dir]
+							outer_failure_pose = r_f[range_index + 1] # set outer pose as failure
+							outer_fpose_index = find_target_index(read_poses, outer_failure_pose, chosen_axis)
+							if outer_fpose_index == None:
+								print "outer_fpose_index"
+								raise ValueError
+							read_poses[outer_fpose_index][-1] = -1
+							ppB.save_poses_into_csv("kg_s_cyl_1", read_poses)
+
+						if (range_index - 1) >= 0:	
+							r = ranges[chosen_axis][chosen_dir]
+							target_pose = r[range_index - 1] # get inner pose
+							# check if inner pose is success
+							target_index = find_target_index(read_poses, target_pose, chosen_axis)
+							if target_index == None:
+								print "target index"
+								raise ValueError
+							if read_poses[target_index][-1] == 1:
+								while_loop_check == False
+								done_axis_dir = 1
+								print "This axis and dir is done"
+								break
+							else:
+								while_loop_check = True
+								print "next pose found"
+								break						
+						else:
 							while_loop_check = False
 							done_axis_dir = 1
 							print "This axis and dir is done"
@@ -541,11 +607,26 @@ def main():
 					elif check_pose_f_or_s(read_poses, pose) == 1: # success grasp
 						print "Pose found was success, looking for next outer pose"
 						# check if the pose is at the last of the list
-						if (ranges.index(target_pose) + 1) != len(ranges):
-							target_pose = ranges[ranges.index(target_pose) + 1]
-							while_loop_check = True
-							print "next pose found"
-							break
+						range_index = find_range_index(ranges[chosen_axis][chosen_dir], target_pose)
+						if range_index == None:
+							raise ValueError			
+						if (range_index + 1) < len(ranges[chosen_axis][chosen_dir]):
+							r = ranges[chosen_axis][chosen_dir]
+							target_pose = r[range_index + 1] # get outer pose
+							# check if outer pose is fail
+							target_index = find_target_index(read_poses, target_pose, chosen_axis)
+							if target_index == None:
+								print "target index"
+								raise ValueError
+							if read_poses[target_index][-1] == -1:
+								while_loop_check == False
+								done_axis_dir = 1
+								print "This axis and dir is done"
+								break
+							else:							
+								while_loop_check = True
+								print "next pose found"
+								break
 						else:
 							while_loop_check = False
 							done_axis_dir = 1 
@@ -564,16 +645,17 @@ def main():
 
 						# Move to the extreme
 						print "Move to the chosen limit pose"
-						Robot.move_to_Goal(pose)
+						Robot.move_to_Goal(pose[0:6])
 
 						# Move closer to object
 						print "Approaching..."
-						closer_pose = pose[:]
+						closer_pose = pose[0:6][:]
 						closer_pose[1] -= 0.054
 						print "closer pose", closer_pose
 						rospy.sleep(3)
 						Robot.move_to_Goal(closer_pose)
 						rospy.sleep(3)
+
 
 						# Start recording
 						print "Start recording..."
@@ -581,7 +663,9 @@ def main():
 						pose_index = find_pose(read_poses, pose)
 						print "Pose index: ", pose_index
 						# record_data = subprocess.Popen(["rosbag", "record", "--output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_sblock_a{}_d{}.bag".format(chosen_axis,chosen_dir), "/camera/color/image_raw", "/j2s7s300_driver/out/joint_state"])
-						cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_sblock_p{}.bag /camera/color/image_raw /j2s7s300_driver/out/joint_state __name:=alpha &".format(pose_index)
+						cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_small_cylinder/kg_scyl_p{}_camera.bag /camera/color/image_raw __name:=alpha_camera &".format(pose_index)
+						record = os.system(cmd)
+						cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_small_cylinder/kg_scyl_p{}_joints.bag /j2s7s300_driver/out/joint_state __name:=alpha_joints &".format(pose_index)
 						record = os.system(cmd)
 
 						rospy.sleep(5)
@@ -589,8 +673,13 @@ def main():
 						print "Grasping..."
 						Robot.move_finger("Close")
 
-						# Set to RRT star
-						# Robot.planner_type("RRT*")
+						rospy.sleep(5)
+						# Stop record
+						print "Stop recording"
+						# record_data.terminate()
+						kill_node = os.system("rosnode kill /alpha_camera")
+						kill_node = os.system("rosnode kill /alpha_joints")
+
 						# Lift
 						print "Lifting..."
 						rospy.sleep(3)
@@ -610,7 +699,7 @@ def main():
 								raise ValueError 
 							print "success_pose_index found: ", success_pose_index
 							read_poses[success_pose_index][-1] = 1
-							ppB.save_poses_into_csv("kg_s_rectblock_2", read_poses)
+							ppB.save_poses_into_csv("kg_s_cyl_1", read_poses)
 						else:
 							# grasp failed
 							print "grasp fails"
@@ -622,21 +711,17 @@ def main():
 								raise ValueError 
 							print "fail_pose_index found: ", fail_pose_index
 							read_poses[fail_pose_index][-1] = -1
-							ppB.save_poses_into_csv("kg_s_rectblock_2", read_poses)
+							ppB.save_poses_into_csv("kg_s_cyl_1", read_poses)
 
 						# Open grasp
 						print "Open grasp"
 						Robot.move_finger("Open")
 						rospy.sleep(3)
-						# Stop record
-						print "Stop recording"
-						# record_data.terminate()
-						kill_node = os.system("rosnode kill /alpha")
+
 
 						# Reset object
 						print "Resetting object..."
-
-						# ser.write('r')
+						ser.write('r')
 						# while 1:
 						# 	tdata = ser.read() # Wait forever for anything
 						# 	print tdata 
@@ -655,6 +740,19 @@ def main():
 						Robot.planner_type("RRT")
 						rospy.sleep(3)
 						Robot.move_to_Goal(initial_pose)	
+
+						# reset ping 
+						ser.write('p')
+						while 1:
+							tdata = ser.read() # Wait forever for anything
+							print tdata 
+							if tdata =='d':
+								print 'yes'
+								break 
+							time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
+							data_left = ser.inWaiting()  # Get the number of characters ready to be read
+							tdata += ser.read(data_left)
+						
 						while_loop_check = False
 						break
 
@@ -673,6 +771,7 @@ def main():
 					print "{} axis in {} direction has done before, find next...".format(chosen_axis, "min" if chosen_dir == 0 else "max")
 
 				done_axis_dir = 0
+				while_loop_check =False
 
 			if pose_count == len(chosen_axis_poses):
 				print "Pose count last"
@@ -681,108 +780,119 @@ def main():
 
 
 	print "ALL LIMITS ARE COMPUTED, NOW TEST THE UNDONE POSES..."
-	read_poses = readfile("kg_s_rectblock_2.csv") # read latest updated file
+	# read_poses = readfile("kg_s_cyl.csv") # read latest updated file
 
-	for i in range(len(read_poses)):
-		if read_poses[i][-1] == 0: # undone pose
-			pose = read_poses[i][:]
-			print "current testing pose: ", pose
-			rospy.sleep(3)
-			Robot.scene.remove_world_object()
-			rospy.sleep(3)
+	# benchmark_feature_2()
 
-			# # Set to RRT star
-			Robot.planner_type("RRT*")
-			rospy.sleep(3)
+	# for i in range(len(read_poses)):
+	# 	if read_poses[i][-1] == 0: # undone pose
+	# 		pose = read_poses[i][:]
+	# 		print "current testing pose: ", pose
+	# 		rospy.sleep(3)
+	# 		Robot.scene.remove_world_object()
+	# 		rospy.sleep(3)
 
-			# Move to the extreme
-			Robot.move_to_Goal(pose)
-			rospy.sleep(3)
+	# 		# # Set to RRT star
+	# 		Robot.planner_type("RRT*")
+	# 		rospy.sleep(3)
 
-			# Move closer to object
-			closer_pose = pose[:]
-			closer_pose[1] -= 0.054
-			Robot.move_to_Goal(closer_pose)
-			rospy.sleep(3)
+	# 		# Move to the extreme
+	# 		Robot.move_to_Goal(pose)
+	# 		rospy.sleep(3)
 
-			print "Start recording"
-			pose_index = find_pose(read_poses, pose)
-			print "Pose index: ", pose_index
-			if pose_index != i:
-				print "Not match!!! ", pose_index, i
-				raise ValueError
-			cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_sblock_p{}.bag /camera/color/image_raw /j2s7s300_driver/out/joint_state __name:=alpha &".format(chosen_axis,chosen_dir, target_pose)
-			record = os.system(cmd)
-			rospy.sleep(3)
+	# 		# Move closer to object
+	# 		closer_pose = pose[:]
+	# 		closer_pose[1] -= 0.054
+	# 		Robot.move_to_Goal(closer_pose)
+	# 		rospy.sleep(3)
 
-			# Grasp
-			Robot.move_finger("Close")
-			rospy.sleep(3)
+	# 		print "Start recording"
+	# 		pose_index = find_pose(read_poses, pose)
+	# 		print "Pose index: ", pose_index
+	# 		if pose_index != i:
+	# 			print "Not match!!! ", pose_index, i
+	# 			raise ValueError
 
-			# Lift
-			# lift_pose = pose[:]
-			# lift_pose[2] = 0.3 
-			Robot.move_to_Goal(lift_pose)
-			rospy.sleep(3)
-
-			# Check if grasp succeeds
-			# Camera code goes in here
-			print "Detecting grasp..."
-			if main_f() == "yes":
-				# grasp suceed
-				print "grasp success"
-				# print "find the next harder / outer pose"
-				# pose += ["s"]
-				success_pose_index = find_pose(read_poses, pose)
-				if success_pose_index == None:
-					print "Success_pose_index not found"
-					raise ValueError 
-				print "success_pose_index found: ", success_pose_index
-				read_poses[success_pose_index][-1] = 1
-				ppB.save_poses_into_csv("kg_s_rectblock_2", read_poses)
-			else:
-				# grasp failed
-				print "grasp fails"
-				# print "find the next easier / inner pose"
-				# pose += ["f"]
-				fail_pose_index = find_pose(read_poses, pose) # find pose position in the file
-				if fail_pose_index == None:
-					print "Fail_pose_index not found"
-					raise ValueError 
-				print "fail_pose_index found: ", fail_pose_index
-				read_poses[fail_pose_index][-1] = -1 # mark middle 
-				ppB.save_poses_into_csv("kg_s_rectblock_2", read_poses)
+	# 		cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_small_cylinder/kg_scyl_p{}_camera.bag /camera/color/image_raw __name:=alpha_camera &".format(pose_index)
+	# 		record = os.system(cmd)
+	# 		cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_small_cylinder/kg_scyl_p{}_joints.bag /j2s7s300_driver/out/joint_state __name:=alpha_joints &".format(pose_index)
+	# 		record = os.system(cmd)
 
 
-			# Open grasp
-			Robot.move_finger("Open")
-			rospy.sleep(3)
+	# 		# Grasp
+	# 		Robot.move_finger("Close")
+	# 		rospy.sleep(5)
 
-			# Stop record
-			print "Stop recording"
-			# record_data.terminate()
-			kill_node = os.system("rosnode kill /alpha")
+	# 		# Stop record
+	# 		print "Stop recording"
+	# 		# record_data.terminate()
+	# 		kill_node = os.system("rosnode kill /alpha_camera")
+	# 		kill_node = os.system("rosnode kill /alpha_joints")
 
-			# Reset object
-			# ser.write('r')
-			# while 1:
-			# 	tdata = ser.read() # Wait forever for anything
-			# 	print tdata 
-			# 	if tdata =='d':
-			# 		print 'yes'
-			# 		break 
-			# 	time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
-			# 	data_left = ser.inWaiting()  # Get the number of characters ready to be read
-			# 	tdata += ser.read(data_left)
+	# 		# Lift
+	# 		# lift_pose = pose[:]
+	# 		# lift_pose[2] = 0.3 
+	# 		Robot.move_to_Goal(lift_pose)
+	# 		rospy.sleep(3)
 
-			# Move back to home pose 
-			Robot.get_Object([0.13125, 0.13125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube for planning
-			Robot.get_Object([0.02, 0.49, 0.50], [-0.38, -0.49, (-0.05 + 0.25 + 0.01), 1.0], "wall") # wall
-			rospy.sleep(3)
-			Robot.planner_type("RRT")
-			rospy.sleep(3)
-			Robot.move_to_Goal(initial_pose)	
-	################################# END ####################################
+	# 		# Check if grasp succeeds
+	# 		# Camera code goes in here
+	# 		print "Detecting grasp..."
+	# 		if main_f() == "yes":
+	# 			# grasp suceed
+	# 			print "grasp success"
+	# 			# print "find the next harder / outer pose"
+	# 			# pose += ["s"]
+	# 			success_pose_index = find_pose(read_poses, pose)
+	# 			if success_pose_index == None:
+	# 				print "Success_pose_index not found"
+	# 				raise ValueError 
+	# 			print "success_pose_index found: ", success_pose_index
+	# 			read_poses[success_pose_index][-1] = 1
+	# 			ppB.save_poses_into_csv("kg_s_cyl", read_poses)
+	# 		else:
+	# 			# grasp failed
+	# 			print "grasp fails"
+	# 			# print "find the next easier / inner pose"
+	# 			# pose += ["f"]
+	# 			fail_pose_index = find_pose(read_poses, pose) # find pose position in the file
+	# 			if fail_pose_index == None:
+	# 				print "Fail_pose_index not found"
+	# 				raise ValueError 
+	# 			print "fail_pose_index found: ", fail_pose_index
+	# 			read_poses[fail_pose_index][-1] = -1 # mark middle 
+	# 			ppB.save_poses_into_csv("kg_s_cyl", read_poses)
+
+
+	# 		# Open grasp
+	# 		Robot.move_finger("Open")
+	# 		rospy.sleep(3)
+
+
+
+	# 		# Reset object
+	# 		ser.write('r')
+
+	# 		# Move back to home pose 
+	# 		Robot.get_Object([0.13125, 0.13125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube for planning
+	# 		Robot.get_Object([0.02, 0.49, 0.50], [-0.38, -0.49, (-0.05 + 0.25 + 0.01), 1.0], "wall") # wall
+	# 		rospy.sleep(3)
+	# 		Robot.planner_type("RRT")
+	# 		rospy.sleep(3)
+	# 		Robot.move_to_Goal(initial_pose)
+
+	# 		# reset ping 
+	# 		ser.write('p')
+	# 		while 1:
+	# 			tdata = ser.read() # Wait forever for anything
+	# 			print tdata 
+	# 			if tdata =='d':
+	# 				print 'yes'
+	# 				break 
+	# 			time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
+	# 			data_left = ser.inWaiting()  # Get the number of characters ready to be read
+	# 			tdata += ser.read(data_left)	
+	################################# BENCHMARK END ####################################
 	# Compute all pose variations
 	# ppB.sampling_all_Poses()
 
@@ -838,19 +948,22 @@ def main():
 
 
 if __name__ == '__main__':
-	main()
-	# benchmark_feature_2()
-	# read_poses = readfile("kg_s_rectblock_1.csv")s
+	# main()
+
+	benchmark_feature_2()
+	# read_poses = readfile("kg_s_rectblock_2.csv")
 	# print np.array(read_poses[1])
 	# find_pose(read_poses, [0.03, -0.58, 0.015, 90, 180, 0])
 	# print check_pose_f_or_s(read_poses, read_poses[2])
 	
 	# Robot = robot('kinova')
 	# Robot.planner_type("RRT")
-	# Robot.get_Object([0.13125, 0.10125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube")
-	# Robot.get_Object([0.02, 0.49, 0.60], [-0.38, -0.49, (-0.05 + 0.30 + 0.01), 1.0], "wall") # wall
+	# Robot.get_Object([0.13125, 0.10125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube
+	# Robot.get_Object([0.02, 0.49, 0.50], [-0.38, -0.49, (-0.05 + 0.25 + 0.01), 1.0], "wall") # wall
 	# rospy.sleep(2)
-	# Robot.move_to_Goal([0.03, -0.59, 0.015, 90, 180, 0])
+	# lift_pose = [-0.24, -0.8325, 0.30, 90, 180, 0] # lifting object
+	# Robot.move_to_Goal(lift_pose)
+	# 
 	# rospy.sleep(2)
 	# Robot.move_to_Goal([-0.24, -0.8325, 0.30, 90, 180, 0])
 	# rospy.sleep(2)
