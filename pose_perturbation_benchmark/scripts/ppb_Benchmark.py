@@ -433,12 +433,13 @@ if __name__ == '__main__':
 	hand_width = 0.175
 	hand_height = 0.08
 	hand_depth = 0.08
-	table_to_hand_distance = 0.0254 # the height of the gripper
-
+	# table_to_hand_distance = 0.0254 # the height of the gripper
+	table_to_hand_distance = 0.04
 	# small retangular block (can apply on other small objects as well)
-	obj_width = 0.04375
-	obj_depth = 0.04375
-	obj_height = 0.04375 + table_to_hand_distance
+	obj_width = 0.0656
+	obj_depth = 0.0656
+	obj_height = 0.24
+	# obj_height = 0.18
 	trans_inc = 0.02
 	orien_inc = 15
 
@@ -451,7 +452,7 @@ if __name__ == '__main__':
 	ppB.get_P_limits()
 	ppB.get_W_limits()
 	ppB.sampling_limits()
-	ppB.save_poses_into_csv("kg_s_cyl_1", ppB.all_all_poses)
+	ppB.save_poses_into_csv("kg_m_hglass_1", ppB.all_all_poses)
 	# ranges = ppB.get_actual_ranges()
 	# print ranges
 	# for pose in ppB.all_rot_poses:

@@ -273,7 +273,7 @@ def find_pose(poses, target_pose):
 	return index
 			
 def benchmark_feature_2():
-	ser = serial.Serial('/dev/ttyACM2')
+	# ser = serial.Serial('/dev/ttyACM2')
 
 	# Set initial pose and base pose
 	initial_pose = [0.02, -0.58, 0.015, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
@@ -289,8 +289,8 @@ def benchmark_feature_2():
 	table_to_hand_distance = 0.0254 # the height of the gripper
 
 	# small retangular block (can apply on other small objects as well)
-	obj_width = 0.04375
-	obj_depth = 0.04375
+	obj_width = 0.0656
+	obj_depth = 0.0656
 	obj_height = 0.04375 + table_to_hand_distance
 	trans_inc = 0.02
 	orien_inc = 15
@@ -321,11 +321,11 @@ def benchmark_feature_2():
 	print "RUNNING BENCHMARK FEATURE 2, NOW TEST THE UNDONE POSES FROM BEGINNING..."
 	# read_poses = readfile("kg_s_rectblock_2.csv") # read latest updated file
 	while True:
-		read_poses = readfile("kg_s_cyl_1.csv")
+		read_poses = readfile("kg_b_block_1.csv")
 
 		for i in range(len(read_poses)):
 			# if read_poses[i][-1] == 0: # undone pose
-			if i == 12: # undone pose
+			if read_poses[i][-1] == 0: # undone pose
 				pose = read_poses[i][0:6]
 				print "current testing pose: ", pose
 				rospy.sleep(3)
@@ -352,9 +352,9 @@ def benchmark_feature_2():
 				if pose_index != i:
 					raise ValueError
 
-				cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_small_cylinder/kg_scyl_p{}_camera.bag /camera/color/image_raw __name:=alpha_camera &".format(pose_index)
+				cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_large_rectangleblock/kg_brect_p{}_camera.bag /camera/color/image_raw __name:=alpha_camera &".format(pose_index)
 				record = os.system(cmd)
-				cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_small_cylinder/kg_scyl_p{}_joints.bag /j2s7s300_driver/out/joint_state __name:=alpha_joints &".format(pose_index)
+				cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_large_rectangleblock/kg_brect_p{}_joints.bag /j2s7s300_driver/out/joint_state __name:=alpha_joints &".format(pose_index)
 				record = os.system(cmd)
 
 
@@ -387,7 +387,7 @@ def benchmark_feature_2():
 						raise ValueError 
 					print "success_pose_index found: ", success_pose_index
 					read_poses[success_pose_index][-1] = 1
-					ppB.save_poses_into_csv("kg_s_cyl_1", read_poses)
+					ppB.save_poses_into_csv("kg_b_block_1", read_poses)
 				else:
 					# grasp failed
 					print "grasp fails"
@@ -398,7 +398,7 @@ def benchmark_feature_2():
 						raise ValueError 
 					print "fail_pose_index found: ", fail_pose_index
 					read_poses[fail_pose_index][-1] = -1 # mark middle 
-					ppB.save_poses_into_csv("kg_s_cyl_1", read_poses)
+					ppB.save_poses_into_csv("kg_b_block_1", read_poses)
 
 
 				# Open grasp
@@ -432,7 +432,7 @@ def benchmark_feature_2():
 				# 	data_left = ser.inWaiting()  # Get the number of characters ready to be read
 				# 	tdata += ser.read(data_left)
 
-				break
+				# break
 		if i == len(read_poses) -1:
 			print "Done"
 			break	
@@ -475,7 +475,7 @@ def find_target_index(read_poses, target_pose, chosen_axis):
 def main():
 	############################### BENCHMARK PIPELINE ######################################
 	# Open reset port
-	ser = serial.Serial('/dev/ttyACM2')
+	# ser = serial.Serial('/dev/ttyACM2')
 
 	# Set initial pose and base pose
 	initial_pose = [0.02, -0.58, 0.015, 90, 180, 0] # about 10 cm away from object, treat it as home pose for the benchmark
@@ -488,15 +488,16 @@ def main():
 	hand_width = 0.175
 	hand_height = 0.08
 	hand_depth = 0.08
-	table_to_hand_distance = 0.0254 # the height of the gripper
-
+	# table_to_hand_distance = 0.0254 # the height of the gripper
+	table_to_hand_distance = 0.04
 	# small retangular block (can apply on other small objects as well)
-	obj_width = 0.04375
-	obj_depth = 0.04375
-	obj_height = 0.04375 + table_to_hand_distance
+	obj_width = 0.0656
+	obj_depth = 0.0656
+	obj_height = 0.24
+	# obj_height = 0.18
 	trans_inc = 0.02
 	orien_inc = 15
-
+	
 	ppB = ppBenchmark(hand_width, hand_depth, hand_height, table_to_hand_distance, obj_width, obj_depth, obj_height, trans_inc, orien_inc, initial_pose)
 	ppB.get_X_limits()
 	ppB.get_Y_limits()
@@ -505,7 +506,7 @@ def main():
 	ppB.get_P_limits()
 	ppB.get_W_limits()
 	ppB.sampling_limits()
-	# ppB.save_poses_into_csv("kg_s_cyl", ppB.all_all_poses)
+	# ppB.save_poses_into_csv("kg_b_cyl", ppB.all_all_poses)
 	limits = ppB.get_actual_limits()
 	ranges = ppB.get_actual_ranges()
 
@@ -522,25 +523,30 @@ def main():
 	# Move to home pose of the benchmark
 	print "Pose variation computed, Robot is moving to initial pose..."
 	Robot.move_to_Goal(initial_pose)
-
+	
+	axes = ["00","01","10","11","20","30","31","40","41","50","51"]
 	total_axis_count = 0
 	record_done_axis = []
 
 	while True:
-		if total_axis_count == 11:
+		if len(record_done_axis) == 11:
 			print "All axis limits are computed, DONE..."
 			break
-		print "Total axis count: ", total_axis_count 
+		print "Number of completed axes: ", len(record_done_axis)
 
 		# Randomly pick an axis. Conduct binary search
-		chosen_axis = random.randint(0,5)
+		ax = random.choice(axes)
+		chosen_axis = int(ax[0])
+
+		# chosen_axis = random.randint(0,5)
 		chosen_axis_poses  = ppB.all_limits[chosen_axis][:]
-
-		if chosen_axis != 2:
-			chosen_dir = random.randint(0,1) # 0 - min, 1 - max
-		else:
-			chosen_dir = 0
-
+		chosen_dir = int(ax[1])
+		# if chosen_axis != 2:
+		# 	chosen_dir = random.randint(0,1) # 0 - min, 1 - max
+		# else:
+		# 	chosen_dir = 0
+		print "Remaining axis and directions: ", axes
+		print "Conduct binary search"
 		# !!!check if this direction has done!!!
 		# Binary search
 		if len(ranges[chosen_axis][chosen_dir]) % 2 == 1: # odd
@@ -553,10 +559,10 @@ def main():
 		while_loop_check = True
 		done_axis_dir = 0
 		target_pose = middle_pose
-
+		loop_again_flag = False
 		while while_loop_check:
 			# check if all axis limits are computed
-			read_poses = readfile("kg_s_cyl_1.csv")
+			read_poses = readfile("kg_m_hglass_1.csv")
 
 			for pose_count, pose in enumerate(chosen_axis_poses,1):
 				if abs(pose[chosen_axis] - target_pose) < 0.00001:
@@ -580,12 +586,13 @@ def main():
 								print "outer_fpose_index"
 								raise ValueError
 							read_poses[outer_fpose_index][-1] = -1
-							ppB.save_poses_into_csv("kg_s_cyl_1", read_poses)
+							ppB.save_poses_into_csv("kg_m_hglass_1", read_poses)
 
 						if (range_index - 1) >= 0:	
 							r = ranges[chosen_axis][chosen_dir]
 							target_pose = r[range_index - 1] # get inner pose
 							# check if inner pose is success
+							print "next pose: ", target_pose
 							target_index = find_target_index(read_poses, target_pose, chosen_axis)
 							if target_index == None:
 								print "target index"
@@ -597,6 +604,7 @@ def main():
 								break
 							else:
 								while_loop_check = True
+								loop_again_flag = True
 								print "next pose found"
 								break						
 						else:
@@ -625,6 +633,7 @@ def main():
 								break
 							else:							
 								while_loop_check = True
+								loop_again_flag = True
 								print "next pose found"
 								break
 						else:
@@ -650,7 +659,7 @@ def main():
 						# Move closer to object
 						print "Approaching..."
 						closer_pose = pose[0:6][:]
-						closer_pose[1] -= 0.054
+						closer_pose[1] -= 0.044
 						print "closer pose", closer_pose
 						rospy.sleep(3)
 						Robot.move_to_Goal(closer_pose)
@@ -663,14 +672,14 @@ def main():
 						pose_index = find_pose(read_poses, pose)
 						print "Pose index: ", pose_index
 						# record_data = subprocess.Popen(["rosbag", "record", "--output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_sblock_a{}_d{}.bag".format(chosen_axis,chosen_dir), "/camera/color/image_raw", "/j2s7s300_driver/out/joint_state"])
-						cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_small_cylinder/kg_scyl_p{}_camera.bag /camera/color/image_raw __name:=alpha_camera &".format(pose_index)
+						cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_medium_hourglass/kg_mhglass_p{}_camera.bag /camera/color/image_raw __name:=alpha_camera &".format(pose_index)
 						record = os.system(cmd)
-						cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_small_cylinder/kg_scyl_p{}_joints.bag /j2s7s300_driver/out/joint_state __name:=alpha_joints &".format(pose_index)
+						cmd = "rosbag record --output-name=/media/yihernong/Samsung_T5/benchmark_data/kinova_medium_hourglass/kg_mhglass_p{}_joints.bag /j2s7s300_driver/out/joint_state __name:=alpha_joints &".format(pose_index)
 						record = os.system(cmd)
 
 						rospy.sleep(5)
 						# Grasp
-						print "Grasping..."
+						print "Grasping..."	
 						Robot.move_finger("Close")
 
 						rospy.sleep(5)
@@ -699,7 +708,7 @@ def main():
 								raise ValueError 
 							print "success_pose_index found: ", success_pose_index
 							read_poses[success_pose_index][-1] = 1
-							ppB.save_poses_into_csv("kg_s_cyl_1", read_poses)
+							ppB.save_poses_into_csv("kg_m_hglass_1", read_poses)
 						else:
 							# grasp failed
 							print "grasp fails"
@@ -711,7 +720,7 @@ def main():
 								raise ValueError 
 							print "fail_pose_index found: ", fail_pose_index
 							read_poses[fail_pose_index][-1] = -1
-							ppB.save_poses_into_csv("kg_s_cyl_1", read_poses)
+							ppB.save_poses_into_csv("kg_m_hglass_1", read_poses)
 
 						# Open grasp
 						print "Open grasp"
@@ -721,7 +730,7 @@ def main():
 
 						# Reset object
 						print "Resetting object..."
-						ser.write('r')
+						# ser.write('r')
 						# while 1:
 						# 	tdata = ser.read() # Wait forever for anything
 						# 	print tdata 
@@ -742,16 +751,16 @@ def main():
 						Robot.move_to_Goal(initial_pose)	
 
 						# reset ping 
-						ser.write('p')
-						while 1:
-							tdata = ser.read() # Wait forever for anything
-							print tdata 
-							if tdata =='d':
-								print 'yes'
-								break 
-							time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
-							data_left = ser.inWaiting()  # Get the number of characters ready to be read
-							tdata += ser.read(data_left)
+						# ser.write('p')
+						# while 1:
+						# 	tdata = ser.read() # Wait forever for anything
+						# 	print tdata 
+						# 	if tdata =='d':
+						# 		print 'yes'
+						# 		break 
+						# 	time.sleep(1)              # Sleep (or inWaiting() doesn't give the correct value)
+						# 	data_left = ser.inWaiting()  # Get the number of characters ready to be read
+						# 	tdata += ser.read(data_left)
 						
 						while_loop_check = False
 						break
@@ -759,25 +768,28 @@ def main():
 					else:
 						print "Not recorded whether the pose is done"
 						raise ValueError
+
 			if done_axis_dir == 1:
 				# print "One axis and direction done: {} axis in {} direction".format(chosen_axis, "min" if chosen_dir == 0 else "max")
-				code = str(chosen_axis) + str(chosen_dir)
+				# code = str(chosen_axis) + str(chosen_dir)
 				# total_axis_count += 1
-				if code not in record_done_axis:
+				if ax not in record_done_axis:
 					print "One axis and direction done: {} axis in {} direction".format(chosen_axis, "min" if chosen_dir == 0 else "max")
-					record_done_axis.append(code)
-					total_axis_count += 1
+					record_done_axis.append(ax)
+					axes.pop(axes.index(ax))
+					# total_axis_count += 1
 				else:
 					print "{} axis in {} direction has done before, find next...".format(chosen_axis, "min" if chosen_dir == 0 else "max")
 
 				done_axis_dir = 0
 				while_loop_check =False
 
-			if pose_count == len(chosen_axis_poses):
+			if (pose_count == len(chosen_axis_poses)) and (loop_again_flag == False):
 				print "Pose count last"
 				while_loop_check = False
-				break
-
+			# else:
+			# 	while_loop_check = True
+			# 	loop_again_flag = False
 
 	print "ALL LIMITS ARE COMPUTED, NOW TEST THE UNDONE POSES..."
 	# read_poses = readfile("kg_s_cyl.csv") # read latest updated file
@@ -950,14 +962,14 @@ def main():
 if __name__ == '__main__':
 	# main()
 
-	benchmark_feature_2()
+	# benchmark_feature_2()
 	# read_poses = readfile("kg_s_rectblock_2.csv")
 	# print np.array(read_poses[1])
 	# find_pose(read_poses, [0.03, -0.58, 0.015, 90, 180, 0])
 	# print check_pose_f_or_s(read_poses, read_poses[2])
 	
-	# Robot = robot('kinova')
-	# Robot.planner_type("RRT")
+	Robot = robot('kinova')
+	Robot.planner_type("RRT")
 	# Robot.get_Object([0.13125, 0.10125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube
 	# Robot.get_Object([0.02, 0.49, 0.50], [-0.38, -0.49, (-0.05 + 0.25 + 0.01), 1.0], "wall") # wall
 	# rospy.sleep(2)
@@ -965,7 +977,7 @@ if __name__ == '__main__':
 	# Robot.move_to_Goal(lift_pose)
 	# 
 	# rospy.sleep(2)
-	# Robot.move_to_Goal([-0.24, -0.8325, 0.30, 90, 180, 0])
+	Robot.move_to_Goal([0.02,-0.59,0.035,90,165,0])
 	# rospy.sleep(2)
 	# Robot.move_to_Goal([0.03, -0.59, 0.015, 90, 180, 0])	
 	# Robot.scene.remove_world_object()
