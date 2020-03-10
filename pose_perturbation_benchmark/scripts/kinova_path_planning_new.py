@@ -960,7 +960,7 @@ def main():
 
 
 if __name__ == '__main__':
-	# main()
+	main()
 
 	# benchmark_feature_2()
 	# read_poses = readfile("kg_s_rectblock_2.csv")
@@ -968,8 +968,8 @@ if __name__ == '__main__':
 	# find_pose(read_poses, [0.03, -0.58, 0.015, 90, 180, 0])
 	# print check_pose_f_or_s(read_poses, read_poses[2])
 	
-	Robot = robot('kinova')
-	Robot.planner_type("RRT")
+	# Robot = robot('kinova')
+	# Robot.planner_type("RRT")
 	# Robot.get_Object([0.13125, 0.10125, 0.93125], [0.0, -0.66, (-0.05 + 0.465625 + 0.01), 1.0], "cube") # get cube
 	# Robot.get_Object([0.02, 0.49, 0.50], [-0.38, -0.49, (-0.05 + 0.25 + 0.01), 1.0], "wall") # wall
 	# rospy.sleep(2)
@@ -977,7 +977,7 @@ if __name__ == '__main__':
 	# Robot.move_to_Goal(lift_pose)
 	# 
 	# rospy.sleep(2)
-	Robot.move_to_Goal([0.02,-0.59,0.035,90,165,0])
+	# Robot.move_to_Goal([0.02,-0.59,0.035,90,165,0])
 	# rospy.sleep(2)
 	# Robot.move_to_Goal([0.03, -0.59, 0.015, 90, 180, 0])	
 	# Robot.scene.remove_world_object()
